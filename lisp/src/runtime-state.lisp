@@ -3,7 +3,7 @@
 (defstruct truerul-runtime-state
   (cycle 0 :type integer)
   (lang :ru :type keyword)
-  (output-mode :verbose :type keyword)
+  (output-mode :clean :type keyword)
   (entities (make-hash-table :test 'equal))
   (relations nil)
   (states nil)

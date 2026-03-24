@@ -60,6 +60,9 @@
         (lines (getf entry :lines)))
     (%save-lines-artifact bucket name (append (list title "") lines))))
 
+(defun %save-block-artifact (name form)
+  (%save-form-artifact "blocks" (format nil "block-~A" (%atom-name name)) form))
+
 (defun %block-snapshot (rt)
   (mapcar (lambda (item)
             (list :name (car item)
@@ -278,6 +281,9 @@
       ((member head '("buffer" "буфер") :test #'string=)
        (%result :buffer :entries (%block-snapshot rt)))
 
+      ((member head '("blocks" "блоки") :test #'string=)
+       (%result :buffer :entries (%block-snapshot rt)))
+
       ((member head '("block" "блок") :test #'string=)
        (let ((name (second form))
              (payload (cddr form)))
@@ -287,12 +293,30 @@
            ((null payload)
             (%result :error :message "блок ожидает содержимое: (блок <имя> <форма>)"))
            (t
-            (let* ((bname (%atom-name name))
+           (let* ((bname (%atom-name name))
                    (stored (if (= (length payload) 1)
                                (car payload)
                                (cons 'progn payload))))
               (setf (gethash bname (runtime-blocks rt)) stored)
-              (%result :ok :message (format nil "блок сохранён: ~A" bname)))))))
+              (handler-case
+                  (let ((path (%save-block-artifact bname stored)))
+                    (%result :ok :message (format nil "блок сохранён: ~A (artifact ~A)" bname path)))
+                (error ()
+                  (%result :ok :message (format nil "блок сохранён: ~A" bname)))))))))
+
+      ((member head '("run-block" "выполнить-блок") :test #'string=)
+       (let* ((name (second form))
+              (bname (and name (%atom-name name)))
+              (stored (and bname (gethash bname (runtime-blocks rt)))))
+         (cond
+           ((null bname)
+            (%result :error :message "выполнить-блок ожидает имя: (выполнить-блок <имя>)"))
+           ((null stored)
+            (%result :error :message (format nil "блок не найден: ~A" bname)))
+           ((not (listp stored))
+            (%result :error :message (format nil "блок ~A имеет неисполняемую форму" bname)))
+           (t
+            (evaluate-form rt stored :record t)))))
 
       ((member head '("insert-block" "вставить-блок") :test #'string=)
        (let* ((name (second form))
@@ -314,13 +338,21 @@
                 (path (%save-lines-artifact "notes" name lines)))
            (%result :ok :message (format nil "сохранено: ~A" path)))))
 
-      ((member head '("save-view" "сохранить-вид" "save-table" "сохранить-таблицу") :test #'string=)
+      ((member head '("save-view" "сохранить-вид") :test #'string=)
        (let ((entry (runtime-last-view rt))
              (name (or (second form) 'view)))
          (if entry
              (let ((path (%save-view-artifact "views" name entry)))
                (%result :ok :message (format nil "вид сохранён: ~A" path)))
              (%result :error :message "нет последнего вида для сохранения"))))
+
+      ((member head '("save-table" "сохранить-таблицу") :test #'string=)
+       (let ((entry (runtime-last-view rt))
+             (name (or (second form) 'table)))
+         (if entry
+             (let ((path (%save-view-artifact "tables" name entry)))
+               (%result :ok :message (format nil "таблица сохранена: ~A" path)))
+             (%result :error :message "нет последнего вида для сохранения таблицы"))))
 
       ((member head '("save-scheme" "сохранить-схему") :test #'string=)
        (let ((entry (runtime-last-view rt))

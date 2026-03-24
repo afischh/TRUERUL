@@ -3,100 +3,155 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>TRUERUL Workbench v0</title>
+    <title>TRUERUL Workbench v1</title>
     <link rel="stylesheet" href="/vendor/xterm/css/xterm.css" />
     <link rel="stylesheet" href="/main.css" />
   </head>
   <body>
-    <div class="app-shell">
-      <header class="header-strip">
-        <div class="title-wrap">
-          <div class="title">TRUERUL</div>
-          <div class="subtitle">спокойная русская оболочка поверх живой консоли</div>
+    <div class="workbench-shell">
+      <header class="menu-bar" aria-label="Главное меню">
+        <div class="brand-block">
+          <div class="brand-title">TRUERUL</div>
+          <div class="brand-subtitle">desktop workbench over live Lisp console</div>
         </div>
 
-        <div class="status-wrap">
-          <span class="badge">RU</span>
-          <span class="status" id="connection-status">booting</span>
-        </div>
-      </header>
-
-      <div class="menu-strip" aria-label="Главное меню">
-        <button type="button" id="shell-back" class="menu-back">Назад</button>
-        <nav class="menu-tabs">
+        <nav class="menu-line">
+          <button type="button" class="menu-tab" data-pane="file">Файл</button>
+          <button type="button" class="menu-tab" data-pane="edit">Правка</button>
+          <button type="button" class="menu-tab" data-pane="view">Вид</button>
           <button type="button" class="menu-tab is-active" data-pane="console">Консоль</button>
-          <button type="button" class="menu-tab" data-pane="buffer">Буфер</button>
           <button type="button" class="menu-tab" data-pane="library">Библиотека</button>
-          <button type="button" class="menu-tab" data-pane="views">Виды</button>
           <button type="button" class="menu-tab" data-pane="schemes">Схемы</button>
           <button type="button" class="menu-tab" data-pane="history">История</button>
-          <button type="button" class="menu-tab" data-pane="help">Помощь</button>
+          <button type="button" class="menu-tab" data-pane="settings">Настройки</button>
+          <button type="button" class="menu-tab" data-pane="help">Справка</button>
         </nav>
-      </div>
 
-      <main class="workspace">
-        <section class="console-zone" aria-label="Консоль Truerul">
-          <div class="terminal-wrap">
+        <div class="menu-meta" id="menu-context">Контекст: Консоль</div>
+      </header>
+
+      <section class="toolbar" aria-label="Панель инструментов">
+        <div class="toolbar-group">
+          <button type="button" id="tool-run-line">Выполнить строку</button>
+          <button type="button" id="tool-run-selection">Выполнить выделенное</button>
+          <button type="button" id="tool-run-buffer">Выполнить буфер</button>
+        </div>
+        <div class="toolbar-group">
+          <button type="button" id="shell-back">Назад</button>
+          <button type="button" data-command="(повторить)" data-enter="1">Повторить</button>
+          <button type="button" id="tool-history">История</button>
+          <button type="button" id="tool-save-block">Сохранить</button>
+          <button type="button" id="tool-scheme">Схема</button>
+          <button type="button" id="tool-help">Помощь</button>
+        </div>
+        <div class="toolbar-group toolbar-group-right">
+          <button type="button" id="mode-clean" data-command="(режим :вывод clean)" data-enter="1">clean</button>
+          <button type="button" id="mode-verbose" data-command="(режим :вывод verbose)" data-enter="1">verbose</button>
+        </div>
+      </section>
+
+      <main class="workbench-main">
+        <aside class="left-pane" aria-label="Библиотечная навигация">
+          <section class="left-section">
+            <h2>Фигуры</h2>
+            <button type="button" class="lib-card" data-inspect-title="Фигура: трурль" data-inspect-body="Классическая фигура Truerul. Можно вставить форму или выполнить сразу." data-inspect-command="(фигура трурль)" data-inspect-insert="(фигура трурль)">трурль</button>
+            <button type="button" class="lib-card" data-inspect-title="Фигура: клапауций" data-inspect-body="Парная фигура для сюжетных и смысловых конструкций." data-inspect-command="(фигура клапауций)" data-inspect-insert="(фигура клапауций)">клапауций</button>
+          </section>
+
+          <section class="left-section">
+            <h2>Категории</h2>
+            <button type="button" class="lib-card" data-inspect-title="Категория: время" data-inspect-body="Базовая категория для схем и дихотомий." data-inspect-command="(категория время)" data-inspect-insert="(категория время)">время</button>
+            <button type="button" class="lib-card" data-inspect-title="Категория: присутствие" data-inspect-body="Контур присутствия и отсутствия в текущем контексте." data-inspect-command="(категория присутствие)" data-inspect-insert="(категория присутствие)">присутствие</button>
+            <button type="button" class="lib-card" data-inspect-title="Категория: тишина" data-inspect-body="Служит для мягких переходов и медленных напряжений." data-inspect-command="(категория тишина)" data-inspect-insert="(категория тишина)">тишина</button>
+          </section>
+
+          <section class="left-section">
+            <h2>Дихотомии</h2>
+            <button type="button" class="lib-card" data-inspect-title="Дихотомия: время/безвременье" data-inspect-body="Типовой каркас для смысловой поляризации." data-inspect-command="(дихотомия время безвременье)" data-inspect-insert="(дихотомия время безвременье)">время / безвременье</button>
+          </section>
+
+          <section class="left-section">
+            <h2>Напряжения</h2>
+            <button type="button" class="lib-card" data-inspect-title="Напряжение: субъект/ничто" data-inspect-body="Готовое напряжение для анализа субъекта." data-inspect-command="(напряжение субъект ничто)" data-inspect-insert="(напряжение субъект ничто)">субъект / ничто</button>
+          </section>
+
+          <section class="left-section">
+            <h2>Блоки</h2>
+            <button type="button" id="left-insert-block">Вставить по имени</button>
+            <button type="button" id="left-save-block">Сохранить текущий</button>
+            <button type="button" id="left-list-blocks">Показать блоки</button>
+          </section>
+
+          <section class="left-section">
+            <h2>Артефакты</h2>
+            <button type="button" id="left-open-views">Открыть просмотр</button>
+          </section>
+        </aside>
+
+        <section class="center-pane" aria-label="Живая консоль Truerul">
+          <div class="console-frame">
             <div id="terminal"></div>
           </div>
 
-          <section class="softkeys" aria-label="Палитра команд">
-            <div class="softkeys-row softkeys-row-symbols">
-              <button type="button" data-insert="(">(</button>
-              <button type="button" data-insert=")">)</button>
-              <button type="button" data-insert=":">:</button>
-              <button type="button" data-insert="?">?</button>
-            </div>
-            <div class="softkeys-row softkeys-row-forms">
-              <button type="button" data-insert="(сущность имя :тип тип)">(сущность ...)</button>
-              <button type="button" data-insert="(связь левая отношение правая)">(связь ...)</button>
-              <button type="button" data-insert="(состояние цель состояние)">(состояние ...)</button>
-              <button type="button" data-insert="(запрос (связь? субъект отношение X))">(запрос ...)</button>
-            </div>
-          </section>
-
-          <nav class="action-strip" aria-label="Быстрые действия">
+          <div class="console-quick-row" aria-label="Быстрые команды">
             <button type="button" data-command="(помощь)" data-enter="1">помощь</button>
             <button type="button" data-command="(журнал)" data-enter="1">журнал</button>
-            <button type="button" data-command="(вид категории)" data-enter="1">виды</button>
+            <button type="button" data-command="(вид категории)" data-enter="1">вид категории</button>
             <button type="button" data-command="(очистить)" data-enter="1">очистить</button>
-          </nav>
+            <button type="button" data-command="(назад)" data-enter="1">назад</button>
+            <button type="button" data-command="(буфер)" data-enter="1">буфер</button>
+            <button type="button" data-insert="(запрос (связь? субъект отношение X))">запрос связь?</button>
+            <button type="button" data-insert="(запрос (сущность? имя :тип _))">запрос сущность?</button>
+            <button type="button" data-insert="(запрос (состояние? цель X))">запрос состояние?</button>
+          </div>
         </section>
 
-        <aside class="shell-panel" aria-label="Редактор и библиотека">
-          <section class="palette-box">
-            <label for="command-palette">Палитра команд</label>
-            <div class="palette-controls">
-              <select id="command-palette">
-                <option value="(сущность имя :тип тип)">(сущность ... :тип ...)</option>
-                <option value="(связь левая отношение правая)">(связь ... ... ...)</option>
-                <option value="(состояние цель состояние)">(состояние ... ...)</option>
-                <option value="(запрос (связь? субъект отношение X))">(запрос (...))</option>
-                <option value="(фигура имя)">(фигура ...)</option>
-                <option value="(категория время)">(категория ...)</option>
-                <option value="(дихотомия левая правая)">(дихотомия ... ...)</option>
-                <option value="(напряжение левая правая)">(напряжение ... ...)</option>
-                <option value="(схема понятие)">(схема ...)</option>
-                <option value="(блок имя (сущность узел :тип точка))">(блок ... ...)</option>
-              </select>
-              <button type="button" id="palette-insert">Вставить</button>
-              <button type="button" id="palette-run">Выполнить</button>
+        <aside class="right-pane" aria-label="Инспектор и рабочие панели">
+          <section class="panel-pane" data-pane-content="file">
+            <h2>Файл</h2>
+            <p>Контур файловых операций и командных шаблонов.</p>
+            <div class="palette-box">
+              <label for="command-palette">Шаблоны форм</label>
+              <div class="palette-controls">
+                <select id="command-palette">
+                  <option value="(сущность имя :тип тип)">(сущность ... :тип ...)</option>
+                  <option value="(связь левая отношение правая)">(связь ... ... ...)</option>
+                  <option value="(состояние цель состояние)">(состояние ... ...)</option>
+                  <option value="(запрос (связь? субъект отношение X))">(запрос (...))</option>
+                  <option value="(фигура имя)">(фигура ...)</option>
+                  <option value="(категория время)">(категория ...)</option>
+                  <option value="(дихотомия левая правая)">(дихотомия ... ...)</option>
+                  <option value="(напряжение левая правая)">(напряжение ... ...)</option>
+                  <option value="(схема понятие)">(схема ...)</option>
+                  <option value="(блок имя (сущность узел :тип точка))">(блок ... ...)</option>
+                </select>
+                <button type="button" id="palette-insert">Вставить</button>
+                <button type="button" id="palette-run">Выполнить</button>
+              </div>
+            </div>
+            <div class="stub-row">
+              <button type="button" data-command="(сохранить-вид desk-v1)" data-enter="1">Сохранить-вид</button>
+              <button type="button" data-command="(журнал)" data-enter="1">Показать журнал</button>
             </div>
           </section>
 
-          <section class="panel-pane is-active" data-pane-content="console">
-            <h2>Консоль</h2>
-            <p>Сердце Truerul остаётся живым терминалом. Справа только лёгкая оболочка для форм и библиотек.</p>
-            <div class="mini-actions">
-              <button type="button" data-command="(режим :вывод clean)" data-enter="1">режим clean</button>
-              <button type="button" data-command="(режим :вывод verbose)" data-enter="1">режим verbose</button>
-              <button type="button" data-command="(помощь)" data-enter="1">помощь</button>
-            </div>
-          </section>
-
-          <section class="panel-pane" data-pane-content="buffer">
-            <h2>Буфер форм</h2>
+          <section class="panel-pane" data-pane-content="edit">
+            <h2>Правка / Буфер</h2>
             <textarea id="form-buffer" spellcheck="false" placeholder="(сущность субъект :тип агент)&#10;(связь субъект исследует цель)"></textarea>
+            <div class="palette-box">
+              <label for="completion-input">Completion (тихо и быстро)</label>
+              <div class="completion-controls">
+                <input id="completion-input" type="text" placeholder="например: сущ" />
+                <button type="button" id="completion-apply">Подсказать</button>
+                <button type="button" id="completion-insert">Вставить</button>
+              </div>
+              <div id="completion-suggestions" class="completion-list">Введите префикс или нажми Tab в буфере.</div>
+              <div class="mini-actions">
+                <button type="button" data-insert="(запрос (связь? субъект отношение X))">+ связь?</button>
+                <button type="button" data-insert="(запрос (сущность? имя :тип _))">+ сущность?</button>
+                <button type="button" data-insert="(запрос (состояние? цель X))">+ состояние?</button>
+              </div>
+            </div>
             <div class="buffer-actions">
               <button type="button" id="buffer-send-line">Выполнить строку</button>
               <button type="button" id="buffer-send-selection">Выполнить выделенное</button>
@@ -107,59 +162,55 @@
               <input id="block-name" type="text" placeholder="имя-блока" />
               <button type="button" id="block-save">Сохранить блок</button>
               <button type="button" id="block-insert">Вставить блок</button>
+              <button type="button" id="block-run">Выполнить блок</button>
             </div>
           </section>
 
-          <section class="panel-pane" data-pane-content="library">
-            <h2>Библиотека</h2>
-
-            <h3>Фигуры</h3>
-            <div class="chip-grid">
-              <button type="button" data-command="(фигура трурль)" data-enter="1">трурль</button>
-              <button type="button" data-command="(фигура клапауций)" data-enter="1">клапауций</button>
-            </div>
-
-            <h3>Категории</h3>
-            <div class="chip-grid">
-              <button type="button" data-command="(категория время)" data-enter="1">время</button>
-              <button type="button" data-command="(категория присутствие)" data-enter="1">присутствие</button>
-              <button type="button" data-command="(категория тишина)" data-enter="1">тишина</button>
-            </div>
-
-            <h3>Дихотомии / напряжения</h3>
-            <div class="chip-grid">
-              <button type="button" data-command="(дихотомия время безвременье)" data-enter="1">время / безвременье</button>
-              <button type="button" data-command="(напряжение субъект ничто)" data-enter="1">субъект / ничто</button>
-              <button type="button" data-command="(карточка-цитаты оператор)" data-enter="1">карточка-цитаты</button>
-            </div>
-          </section>
-
-          <section class="panel-pane" data-pane-content="views">
-            <h2>Виды и артефакты</h2>
-            <div class="mini-actions">
-              <button type="button" data-command="(вид категории)" data-enter="1">вид категории</button>
-              <button type="button" data-command="(вид напряжения)" data-enter="1">вид напряжения</button>
-              <button type="button" data-command="(вид дихотомии)" data-enter="1">вид дихотомии</button>
-              <button type="button" data-command="(вид дерево-категорий)" data-enter="1">дерево-категорий</button>
-            </div>
-
+          <section class="panel-pane" data-pane-content="view">
+            <h2>Вид / Артефакты</h2>
             <div class="artifact-controls">
-              <label for="artifact-bucket">Сохранённые</label>
+              <label for="artifact-bucket">Раздел</label>
               <select id="artifact-bucket">
                 <option value="notes">notes</option>
                 <option value="views">views</option>
+                <option value="tables">tables</option>
                 <option value="schemes">schemes</option>
+                <option value="blocks">blocks</option>
               </select>
-              <button type="button" id="artifact-refresh">Обновить список</button>
+              <button type="button" id="artifact-refresh">Обновить</button>
             </div>
-
             <div id="artifact-list" class="artifact-list" aria-live="polite"></div>
-
-            <h3>Просмотр</h3>
+            <h3>Предпросмотр</h3>
             <pre id="artifact-preview">Выбери артефакт, чтобы открыть его здесь.</pre>
             <div class="mini-actions">
               <button type="button" id="artifact-insert">Вставить в буфер</button>
               <button type="button" id="artifact-run">Выполнить формы</button>
+              <button type="button" id="artifact-open-view">Открыть просмотр</button>
+            </div>
+          </section>
+
+          <section class="panel-pane is-active" data-pane-content="console">
+            <h2>Консоль</h2>
+            <p>Живой PTY-терминал — центральный орган. Оболочка лишь структурирует доступ к режимам, библиотеке и артефактам.</p>
+            <div class="mini-actions">
+              <button type="button" data-command="(режим :вывод clean)" data-enter="1">режим clean</button>
+              <button type="button" data-command="(режим :вывод verbose)" data-enter="1">режим verbose</button>
+              <button type="button" data-command="(помощь)" data-enter="1">помощь</button>
+            </div>
+          </section>
+
+          <section class="panel-pane" data-pane-content="library">
+            <h2>Библиотека / Инспектор</h2>
+            <h3 id="inspector-title">Карточка не выбрана</h3>
+            <pre id="inspector-body">Выбери элемент в левой панели, чтобы увидеть детали и выполнить/вставить форму.</pre>
+            <div class="mini-actions">
+              <button type="button" id="inspector-insert">Вставить в буфер</button>
+              <button type="button" id="inspector-run">Выполнить в консоли</button>
+              <button type="button" id="inspector-open-view">Открыть просмотр</button>
+            </div>
+            <div class="block-row block-row-compact">
+              <input id="inspector-block-name" type="text" placeholder="имя-блока-из-инспектора" />
+              <button type="button" id="inspector-save-block">Сохранить как блок</button>
             </div>
           </section>
 
@@ -172,18 +223,17 @@
             </div>
             <div class="mini-actions">
               <button type="button" id="scheme-save">Сохранить-схему</button>
-              <button type="button" data-command="(сохранить-вид схема-v0)" data-enter="1">Сохранить-вид</button>
+              <button type="button" data-command="(сохранить-вид схема-v1)" data-enter="1">Сохранить-вид</button>
             </div>
           </section>
 
           <section class="panel-pane" data-pane-content="history">
-            <h2>История и блоки</h2>
+            <h2>История</h2>
             <div class="mini-actions">
               <button type="button" data-command="(история)" data-enter="1">история</button>
               <button type="button" data-command="(назад)" data-enter="1">назад</button>
               <button type="button" data-command="(повторить)" data-enter="1">повторить</button>
               <button type="button" data-command="(буфер)" data-enter="1">буфер</button>
-              <button type="button" data-command="(журнал)" data-enter="1">журнал</button>
             </div>
             <div class="recent-box">
               <h3>Недавние команды</h3>
@@ -191,18 +241,56 @@
             </div>
           </section>
 
-          <section class="panel-pane" data-pane-content="help">
-            <h2>Помощь</h2>
-            <p>Оболочка v0: консоль в центре, буфер и библиотека справа, виды и схемы рядом.</p>
+          <section class="panel-pane" data-pane-content="settings">
+            <h2>Настройки</h2>
+            <p>Контур подготовлен под будущую конфигурацию поведения workbench.</p>
             <ul>
-              <li>Вставляй шаблоны через «Палитра команд».</li>
-              <li>Пиши серию форм в «Буфер форм» и отправляй выделенное.</li>
-              <li>Открывай сохранённые artifacts во вкладке «Виды».</li>
-              <li>Кнопка «Назад» возвращает к прошлой панели; если истории панели нет, отправляет `(назад)` в Truerul.</li>
+              <li>Видимость панелей (stub)</li>
+              <li>Режим вывода clean/verbose (рабочий)</li>
+              <li>Цель выполнения по умолчанию (stub)</li>
+              <li>Фильтры артефактов (частично через раздел)</li>
+              <li>Плотность/шрифт/тема (stub)</li>
+            </ul>
+          </section>
+
+          <section class="panel-pane" data-pane-content="help">
+            <h2>Справка</h2>
+            <ul>
+              <li>Меню сверху задаёт рабочий контекст правой панели.</li>
+              <li>Левая панель — библиотека и навигация по фигурам/категориям.</li>
+              <li>Центр — живой терминал Truerul (основная рабочая зона).</li>
+              <li>Правая панель — инспектор, буфер, схемы, история, настройки.</li>
+              <li>Нижняя зона показывает журнал shell и preview буфера.</li>
             </ul>
           </section>
         </aside>
       </main>
+
+      <section class="bottom-pane" aria-label="Нижняя служебная зона">
+        <div class="bottom-tabs">
+          <button type="button" class="bottom-tab is-active" data-bottom-pane="log">Вывод shell</button>
+          <button type="button" class="bottom-tab" data-bottom-pane="buffer">Буфер preview</button>
+          <button type="button" class="bottom-tab" data-bottom-pane="artifact">Artifact preview</button>
+        </div>
+        <div class="bottom-content is-active" data-bottom-content="log">
+          <pre id="bottom-output-log">Готово.</pre>
+        </div>
+        <div class="bottom-content" data-bottom-content="buffer">
+          <pre id="bottom-buffer-preview">Буфер пока пуст.</pre>
+        </div>
+        <div class="bottom-content" data-bottom-content="artifact">
+          <pre id="bottom-artifact-preview">Artifact пока не выбран.</pre>
+        </div>
+      </section>
+
+      <footer class="status-bar" aria-label="Статус">
+        <span id="status-runtime">runtime: -</span>
+        <span id="connection-status">booting</span>
+        <span id="status-language">lang: RU</span>
+        <span id="status-output-mode">output: clean</span>
+        <span id="status-active-pane">pane: console</span>
+        <span id="status-artifact">artifact: -</span>
+      </footer>
     </div>
 
     <script src="/vendor/xterm/xterm.js"></script>

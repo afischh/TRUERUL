@@ -16,7 +16,7 @@ const xtermDir = path.join(nodeModulesDir, '@xterm', 'xterm');
 const PORT = Number(process.env.TRUERUL_WEB_PORT || 4173);
 const DEFAULT_RUNTIME = process.env.TRUERUL_RUNTIME || 'js';
 const artifactsRootDir = path.join(rootDir, 'lisp', 'artifacts');
-const artifactBuckets = new Set(['notes', 'views', 'schemes']);
+const artifactBuckets = new Set(['notes', 'views', 'tables', 'schemes', 'blocks']);
 
 function assertArtifactBucket(bucket) {
   if (!artifactBuckets.has(bucket)) {
