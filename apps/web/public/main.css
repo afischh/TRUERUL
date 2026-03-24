@@ -478,7 +478,8 @@ pre {
 }
 
 #bottom-output-log,
-#bottom-buffer-preview {
+#bottom-buffer-preview,
+#bottom-artifact-preview {
   min-height: 100%;
   margin: 0;
   font-size: 12px;
@@ -491,7 +492,7 @@ pre {
 
 .status-bar {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 0;
   border-top: 1px solid var(--line-strong);
   background: linear-gradient(180deg, #eceff4, #d4dae4);
@@ -584,6 +585,6 @@ pre {
   }
 
   .status-bar {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

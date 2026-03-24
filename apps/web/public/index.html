@@ -53,9 +53,9 @@
       <main class="workbench-main">
         <aside class="left-pane" aria-label="Библиотечная навигация">
           <section class="left-section">
-            <h2>Фигуры</h2>
-            <button type="button" class="lib-card" data-inspect-title="Фигура: трурль" data-inspect-body="Классическая фигура Truerul. Можно вставить форму или выполнить сразу." data-inspect-command="(фигура трурль)" data-inspect-insert="(фигура трурль)">трурль</button>
-            <button type="button" class="lib-card" data-inspect-title="Фигура: клапауций" data-inspect-body="Парная фигура для сюжетных и смысловых конструкций." data-inspect-command="(фигура клапауций)" data-inspect-insert="(фигура клапауций)">клапауций</button>
+            <h2>Фигуры (legacy)</h2>
+            <button type="button" class="lib-card" data-inspect-title="Фигура: трурль" data-inspect-body="Культурный слой памяти. Не является ядром механики языка." data-inspect-command="(фигура трурль)" data-inspect-insert="(фигура трурль)">трурль</button>
+            <button type="button" class="lib-card" data-inspect-title="Фигура: клапауций" data-inspect-body="Культурный слой памяти. Использовать как библиотечный ресурс, не как движок." data-inspect-command="(фигура клапауций)" data-inspect-insert="(фигура клапауций)">клапауций</button>
           </section>
 
           <section class="left-section">
@@ -73,6 +73,14 @@
           <section class="left-section">
             <h2>Напряжения</h2>
             <button type="button" class="lib-card" data-inspect-title="Напряжение: субъект/ничто" data-inspect-body="Готовое напряжение для анализа субъекта." data-inspect-command="(напряжение субъект ничто)" data-inspect-insert="(напряжение субъект ничто)">субъект / ничто</button>
+          </section>
+
+          <section class="left-section">
+            <h2>Голоса</h2>
+            <button type="button" class="lib-card" data-inspect-title="Голос: сборка" data-inspect-body="Конструктивный режим: собирает рабочую структуру и закрывает недостающие узлы." data-inspect-command="(голос сборка)" data-inspect-insert="(режим :голос сборка)">сборка</button>
+            <button type="button" class="lib-card" data-inspect-title="Голос: предел" data-inspect-body="Критический режим: проверяет ограничения, противоречия и лишний шум." data-inspect-command="(голос предел)" data-inspect-insert="(режим :голос предел)">предел</button>
+            <button type="button" class="lib-card" data-inspect-title="Голос: синтез" data-inspect-body="Медиатор: сводит контуры в цельную читаемую композицию." data-inspect-command="(голос синтез)" data-inspect-insert="(режим :голос синтез)">синтез</button>
+            <button type="button" data-command="(голоса)" data-enter="1">показать все голоса</button>
           </section>
 
           <section class="left-section">
@@ -111,19 +119,44 @@
             <h2>Файл</h2>
             <p>Контур файловых операций и командных шаблонов.</p>
             <div class="palette-box">
-              <label for="command-palette">Шаблоны форм</label>
+              <label for="command-palette">Шаблоны форм по стратам</label>
               <div class="palette-controls">
                 <select id="command-palette">
-                  <option value="(сущность имя :тип тип)">(сущность ... :тип ...)</option>
-                  <option value="(связь левая отношение правая)">(связь ... ... ...)</option>
-                  <option value="(состояние цель состояние)">(состояние ... ...)</option>
-                  <option value="(запрос (связь? субъект отношение X))">(запрос (...))</option>
-                  <option value="(фигура имя)">(фигура ...)</option>
-                  <option value="(категория время)">(категория ...)</option>
-                  <option value="(дихотомия левая правая)">(дихотомия ... ...)</option>
-                  <option value="(напряжение левая правая)">(напряжение ... ...)</option>
-                  <option value="(схема понятие)">(схема ...)</option>
-                  <option value="(блок имя (сущность узел :тип точка))">(блок ... ...)</option>
+                  <optgroup label="Мир">
+                    <option value="(сущность имя :тип тип)">(сущность ... :тип ...)</option>
+                    <option value="(связь левая отношение правая)">(связь ... ... ...)</option>
+                    <option value="(состояние цель состояние)">(состояние ... ...)</option>
+                  </optgroup>
+                  <optgroup label="Запрос">
+                    <option value="(запрос (связь? субъект отношение X))">(запрос (связь? ...))</option>
+                    <option value="(запрос (сущность? имя :тип _))">(запрос (сущность? ...))</option>
+                    <option value="(запрос (состояние? цель X))">(запрос (состояние? ...))</option>
+                  </optgroup>
+                  <optgroup label="Вид">
+                    <option value="(вид категории)">(вид категории)</option>
+                    <option value="(схема понятие)">(схема ...)</option>
+                  </optgroup>
+                  <optgroup label="Библиотека">
+                    <option value="(категория время)">(категория ...)</option>
+                    <option value="(дихотомия левая правая)">(дихотомия ... ...)</option>
+                    <option value="(напряжение левая правая)">(напряжение ... ...)</option>
+                    <option value="(фигура имя)">(фигура ...)</option>
+                  </optgroup>
+                  <optgroup label="Мастерская">
+                    <option value="(блок имя (сущность узел :тип точка))">(блок ... ...)</option>
+                    <option value="(блоки)">(блоки)</option>
+                    <option value="(сохранить имя)">(сохранить ...)</option>
+                  </optgroup>
+                  <optgroup label="Голоса/Эвристика">
+                    <option value="(голоса)">(голоса)</option>
+                    <option value="(голос синтез)">(голос синтез)</option>
+                    <option value="(режим :голос синтез)">(режим :голос ...)</option>
+                    <option value="(применить-голос синтез (схема понятие))">(применить-голос ...)</option>
+                    <option value="(гипотеза h1 (связь субъект отношение объект))">(гипотеза ...)</option>
+                    <option value="(спор тезис антитезис)">(спор ...)</option>
+                    <option value="(заметка краткий-текст)">(заметка ...)</option>
+                    <option value="(вывод текущий-контур)">(вывод ...)</option>
+                  </optgroup>
                 </select>
                 <button type="button" id="palette-insert">Вставить</button>
                 <button type="button" id="palette-run">Выполнить</button>
@@ -256,12 +289,22 @@
           <section class="panel-pane" data-pane-content="help">
             <h2>Справка</h2>
             <ul>
+              <li>Страты языка: Мир, Запрос, Вид, Библиотека, Мастерская, Голоса/Эвристика.</li>
               <li>Меню сверху задаёт рабочий контекст правой панели.</li>
               <li>Левая панель — библиотека и навигация по фигурам/категориям.</li>
               <li>Центр — живой терминал Truerul (основная рабочая зона).</li>
               <li>Правая панель — инспектор, буфер, схемы, история, настройки.</li>
               <li>Нижняя зона показывает журнал shell и preview буфера.</li>
             </ul>
+            <div class="palette-box">
+              <h3>Канонический ритм</h3>
+              <pre>1) библиотека -> 2) мир -> 3) запрос -> 4) вид/схема -> 5) сохранить -> 6) голос/эвристика</pre>
+              <div class="mini-actions">
+                <button type="button" data-command="(слои)" data-enter="1">показать слои</button>
+                <button type="button" data-command="(ритм)" data-enter="1">показать ритм</button>
+                <button type="button" data-command="(канон)" data-enter="1">канонизация</button>
+              </div>
+            </div>
           </section>
         </aside>
       </main>
@@ -288,6 +331,7 @@
         <span id="connection-status">booting</span>
         <span id="status-language">lang: RU</span>
         <span id="status-output-mode">output: clean</span>
+        <span id="status-voice">voice: синтез</span>
         <span id="status-active-pane">pane: console</span>
         <span id="status-artifact">artifact: -</span>
       </footer>

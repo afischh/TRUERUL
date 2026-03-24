@@ -78,6 +78,138 @@
       (%result :silent)
       (%result :ok :message message)))
 
+(defun %value->text (value)
+  (cond
+    ((null value) "")
+    ((stringp value) value)
+    ((symbolp value) (%atom-name value))
+    ((listp value) (%print-form value))
+    (t (princ-to-string value))))
+
+(defun %normalize-string-list (value)
+  (cond
+    ((null value) nil)
+    ((listp value) (remove-if #'null (mapcar #'%value->text value)))
+    (t (list (%value->text value)))))
+
+(defun %language-layer-specs ()
+  (list
+   (list :family "Мир"
+         :note "Онтологическое построение фрагмента мира."
+         :heads '("сущность" "связь" "состояние"))
+   (list :family "Запрос"
+         :note "Проверка и извлечение без изменения мира."
+         :heads '("запрос" "связь?" "сущность?" "состояние?"))
+   (list :family "Вид"
+         :note "Представление и композиция структуры."
+         :heads '("вид" "схема"))
+   (list :family "Библиотека"
+         :note "Накопленная память и концептуальные ресурсы."
+         :heads '("категория" "дихотомия" "напряжение" "карточка-цитаты" "помощь" "фигура"))
+   (list :family "Мастерская"
+         :note "Рабочая среда и операционный цикл."
+         :heads '("буфер" "блок" "блоки" "вставить-блок" "выполнить-блок"
+                  "история" "назад" "повторить"
+                  "сохранить" "сохранить-вид" "сохранить-таблицу" "сохранить-схему"
+                  "очистить" "режим"))
+   (list :family "Голоса/Эвристика"
+         :note "Режимы рассуждения, гипотезы и сравнительные проходы."
+         :heads '("голоса" "голос" "применить-голос" "гипотеза" "спор" "заметка" "вывод"))))
+
+(defun %layer-lines ()
+  (let ((lines (list "стратификация языка Truerul"
+                     (make-string 72 :initial-element #\-))))
+    (dolist (spec (%language-layer-specs))
+      (push (format nil "~A:" (getf spec :family)) lines)
+      (push (format nil "  формы: ~{~A~^, ~}" (getf spec :heads)) lines)
+      (push (format nil "  роль: ~A" (getf spec :note)) lines)
+      (push "" lines))
+    (nreverse lines)))
+
+(defun %canonical-flow-lines ()
+  (list
+   "канонический ритм пользователя"
+   (make-string 72 :initial-element #\-)
+   "1) открыть библиотечный ресурс (категория/дихотомия/напряжение/помощь)"
+   "2) собрать фрагмент мира (сущность/связь/состояние)"
+   "3) проверить гипотезы запросом (запрос + связь?/сущность?/состояние?)"
+   "4) сделать представление (вид/схема)"
+   "5) сохранить результат в мастерской (блок/сохранить-*)"
+   "6) при необходимости применить голос/эвристику (голос/применить-голос/гипотеза)"))
+
+(defun %cleanup-lines ()
+  (list
+   "cleanup / канонизация поверхности команд"
+   (make-string 72 :initial-element #\-)
+   "оставить каноничными RU-головы как первичные."
+   "EN-головы держать как alias-совместимость (entity/relation/query/...)." 
+   "режим трактовать как мастерскую мета-команду (язык/вывод/голос), а не как онтологию."
+   "фигура оставить в библиотеке (культурная память), не как центральный движок."
+   "голоса сделать центральным входом будущей эвристики, без персонализации авторов."
+   "в перспективе: пометить фигура/карточка-цитаты как secondary-family в UI."))
+
+(defun %normalize-voice-name (name)
+  (let ((raw (%atom-name name)))
+    (cond
+      ((member raw '("builder" "constructive" "конструктор" "сборщик" "сборка") :test #'string=) "сборка")
+      ((member raw '("critic" "critical" "критик" "предел" "ограничитель") :test #'string=) "предел")
+      ((member raw '("synth" "synthesis" "медиатор" "синтез") :test #'string=) "синтез")
+      (t raw))))
+
+(defun %voice-fetch (rt name)
+  (let* ((normalized (%normalize-voice-name name))
+         (voice (gethash normalized (runtime-voices rt))))
+    (values normalized voice)))
+
+(defun %voice-lines (voice active-name)
+  (let* ((name (%atom-name (getf voice :name)))
+         (active (string= name (%atom-name active-name)))
+         (marker (if active "*" "-")))
+    (list
+     (format nil "~A голос: ~A" marker name)
+     (format nil "  позиция: ~A" (%value->text (getf voice :stance)))
+     (format nil "  фокус: ~A" (%value->text (getf voice :focus)))
+     (format nil "  тенденции: ~{~A~^, ~}" (%normalize-string-list (getf voice :tendencies)))
+     (format nil "  проверки: ~{~A~^, ~}" (%normalize-string-list (getf voice :checks)))
+     (format nil "  ключи: ~{~A~^, ~}" (%normalize-string-list (getf voice :keywords))))))
+
+(defun %voices-list-view (rt)
+  (let ((lines (list "голоса Truerul"
+                     (make-string 72 :initial-element #\-)
+                     (format nil "активный голос: ~A" (runtime-active-voice rt))
+                     "")))
+    (dolist (pair (%voice-entries rt))
+      (setf lines (append lines (%voice-lines (cdr pair) (runtime-active-voice rt)) (list ""))))
+    (list :title "голоса" :lines lines)))
+
+(defun %voice-single-view (rt voice)
+  (list :title (format nil "голос ~A" (%atom-name (getf voice :name)))
+        :lines (%voice-lines voice (runtime-active-voice rt))))
+
+(defun %voice-suggestions (voice target-text)
+  (let ((name (%atom-name (getf voice :name))))
+    (cond
+      ((string= name "сборка")
+       (list (format nil "построй ядро формы вокруг: ~A" target-text)
+             "добавь недостающие сущности и явные связи"
+             "собери рабочий блок для повторного запуска"))
+      ((string= name "предел")
+       (list (format nil "проверь ограничения и противоречия в: ~A" target-text)
+             "удали лишние/шумные связи"
+             "отметь что не доказано запросом"))
+      ((string= name "синтез")
+       (list (format nil "сведи контуры в читаемый вид: ~A" target-text)
+             "собери схему и соседние состояния"
+             "подготовь сохранённый вид/таблицу для сравнения"))
+      (t
+       (list (format nil "применить голос ~A к: ~A" name target-text)
+             "выделить главную структуру"
+             "сохранить результат в мастерской")))))
+
+(defun %heuristic-log-append (rt entry)
+  (setf (runtime-heuristic-log rt)
+        (append (runtime-heuristic-log rt) (list entry))))
+
 (defun evaluate-form (rt form &key (record t))
   (unless (and (listp form) form)
     (return-from evaluate-form
@@ -195,6 +327,121 @@
                (setf (runtime-last-view rt) entry)
                (%result :view :entry entry))
              (%result :error :message "схема ожидает понятие, например (схема время)"))))
+
+      ((member head '("layers" "слои" "страты" "язык") :test #'string=)
+       (%result :view :entry (list :title "страты языка" :lines (%layer-lines))))
+
+      ((member head '("flow" "ритм" "поток") :test #'string=)
+       (%result :view :entry (list :title "канонический ритм" :lines (%canonical-flow-lines))))
+
+      ((member head '("canon" "канон" "чистка-языка") :test #'string=)
+       (%result :view :entry (list :title "канонизация поверхности" :lines (%cleanup-lines))))
+
+      ((member head '("voices" "голоса") :test #'string=)
+       (%result :view :entry (%voices-list-view rt)))
+
+      ((member head '("voice" "голос") :test #'string=)
+       (let* ((name (second form))
+              (args (cddr form)))
+         (if (null name)
+             (%result :view :entry (%voices-list-view rt))
+             (multiple-value-bind (vname voice) (%voice-fetch rt name)
+               (if (null voice)
+                   (%result :error :message (format nil "голос не найден: ~A" vname))
+                   (if (null args)
+                       (%result :view :entry (%voice-single-view rt voice))
+                       (let* ((updated (append voice nil))
+                              (focus (or (%plist-value args :focus) (%plist-value args :фокус)))
+                              (stance (or (%plist-value args :stance) (%plist-value args :позиция)))
+                              (tendencies (or (%plist-value args :tendencies) (%plist-value args :тенденции)))
+                              (checks (or (%plist-value args :checks) (%plist-value args :проверки)))
+                              (keywords (or (%plist-value args :keywords) (%plist-value args :ключи))))
+                         (when focus (setf (getf updated :focus) (%value->text focus)))
+                         (when stance (setf (getf updated :stance) (%value->text stance)))
+                         (when tendencies (setf (getf updated :tendencies) (%normalize-string-list tendencies)))
+                         (when checks (setf (getf updated :checks) (%normalize-string-list checks)))
+                         (when keywords (setf (getf updated :keywords) (%normalize-string-list keywords)))
+                         (setf (gethash vname (runtime-voices rt)) updated)
+                         (%result :ok :message (format nil "голос обновлён: ~A" vname)))))))))
+
+      ((member head '("apply-voice" "применить-голос") :test #'string=)
+       (let* ((arg1 (second form))
+              (arg2 (third form))
+              (name (if (and arg1 (not (listp arg1))) arg1 (runtime-active-voice rt)))
+              (target (if (and arg1 (not (listp arg1))) arg2 arg1)))
+         (if (null target)
+             (%result :error :message "применить-голос ожидает цель: (применить-голос <голос> <форма|тема>)")
+             (multiple-value-bind (vname voice) (%voice-fetch rt name)
+               (if (null voice)
+                   (%result :error :message (format nil "голос не найден: ~A" vname))
+                   (let ((entry (list :title (format nil "применить голос ~A" vname)
+                                      :lines (append
+                                              (list (format nil "цель: ~A" (%value->text target))
+                                                    (format nil "позиция: ~A" (%value->text (getf voice :stance)))
+                                                    (format nil "фокус: ~A" (%value->text (getf voice :focus)))
+                                                    ""
+                                                    "предложенные шаги:")
+                                              (loop for item in (%voice-suggestions voice (%value->text target))
+                                                    for idx from 1
+                                                    collect (format nil "~D) ~A" idx item))))))
+                     (%heuristic-log-append rt (list :type :voice-apply :voice vname :target (%value->text target)))
+                     (%push-log rt (list :type :voice-apply :voice vname :target (%value->text target)))
+                     (%result :view :entry entry)))))))
+
+      ((member head '("hypothesis" "гипотеза") :test #'string=)
+       (let* ((name (or (second form) 'hypothesis))
+              (body (or (third form) (second form)))
+              (entry (list :type :hypothesis
+                           :name (%atom-name name)
+                           :body (%value->text body)
+                           :voice (runtime-active-voice rt))))
+         (%heuristic-log-append rt entry)
+         (%push-log rt entry)
+         (%result :ok :message (format nil "гипотеза сохранена: ~A" (%atom-name name)))))
+
+      ((member head '("dispute" "спор") :test #'string=)
+       (let* ((thesis (second form))
+              (antithesis (third form)))
+         (if (or (null thesis) (null antithesis))
+             (%result :error :message "спор ожидает пару: (спор <тезис> <антитезис>)")
+             (let ((entry (list :title "спор"
+                                :lines (list
+                                        (format nil "тезис: ~A" (%value->text thesis))
+                                        (format nil "антитезис: ~A" (%value->text antithesis))
+                                        (format nil "активный голос: ~A" (runtime-active-voice rt))
+                                        ""
+                                        "рекомендация: пройти оба тезиса через (применить-голос)."))))
+               (%heuristic-log-append rt (list :type :dispute
+                                               :thesis (%value->text thesis)
+                                               :antithesis (%value->text antithesis)
+                                               :voice (runtime-active-voice rt)))
+               (%push-log rt (list :type :dispute
+                                   :thesis (%value->text thesis)
+                                   :antithesis (%value->text antithesis)))
+               (%result :view :entry entry)))))
+
+      ((member head '("note" "заметка") :test #'string=)
+       (let* ((body (second form))
+              (entry (list :type :note :body (%value->text body) :voice (runtime-active-voice rt))))
+         (%heuristic-log-append rt entry)
+         (%push-log rt entry)
+         (%result :ok :message "заметка добавлена в эвристический журнал")))
+
+      ((member head '("inference" "вывод") :test #'string=)
+       (let* ((target (or (second form) (and (runtime-last-view rt) (getf (runtime-last-view rt) :title)) "текущий контур"))
+              (voice-name (runtime-active-voice rt))
+              (voice (gethash voice-name (runtime-voices rt)))
+              (entry (list :title "эвристический вывод"
+                           :lines (append
+                                   (list (format nil "контур: ~A" (%value->text target))
+                                         (format nil "голос: ~A" voice-name)
+                                         "")
+                                   (loop for item in (%voice-suggestions voice (%value->text target))
+                                         for idx from 1
+                                         collect (format nil "~D) ~A" idx item))))))
+         (%heuristic-log-append rt (list :type :inference :target (%value->text target) :voice voice-name))
+         (%push-log rt (list :type :inference :target (%value->text target) :voice voice-name))
+         (%result :view :entry entry)))
 
       ((member head '("help" "помощь") :test #'string=)
        (if (second form)
@@ -377,12 +624,17 @@
                         (%plist-value (cdr form) :язык)))
               (output (or (%plist-value (cdr form) :output)
                           (%plist-value (cdr form) :вывод)))
+              (voice (or (%plist-value (cdr form) :voice)
+                         (%plist-value (cdr form) :голос)))
               (has-lang (or (%plist-has-key (cdr form) :lang)
                             (%plist-has-key (cdr form) :язык)))
               (has-output (or (%plist-has-key (cdr form) :output)
                               (%plist-has-key (cdr form) :вывод)))
+              (has-voice (or (%plist-has-key (cdr form) :voice)
+                             (%plist-has-key (cdr form) :голос)))
               (lname (%atom-name lang))
               (oname (%atom-name output))
+              (vname (%normalize-voice-name voice))
               (normalized (cond
                             ((string= lname "ru") :ru)
                             ((string= lname "en") :en)
@@ -390,23 +642,29 @@
               (normalized-output (cond
                                    ((member oname '("clean" "result" "чисто" "результат") :test #'string=) :clean)
                                    ((member oname '("verbose" "build" "подробно" "сборка") :test #'string=) :verbose)
-                                   (t nil))))
+                                   (t nil)))
+              (normalized-voice (and has-voice (gethash vname (runtime-voices rt)))))
          (cond
            ((and has-lang (null normalized))
             (%result :error :message "режим ожидает :язык ru|en"))
            ((and has-output (null normalized-output))
             (%result :error :message "режим ожидает :вывод clean|verbose"))
-           ((or normalized normalized-output)
+           ((and has-voice (null normalized-voice))
+            (%result :error :message "режим ожидает :голос сборка|предел|синтез"))
+           ((or normalized normalized-output has-voice)
             (when normalized
               (setf (runtime-lang rt) normalized))
             (when normalized-output
               (setf (runtime-output-mode rt) normalized-output))
+            (when has-voice
+              (setf (runtime-active-voice rt) vname))
             (%result :ok
-                     :message (format nil "режим обновлён: язык=~A, вывод=~A"
+                     :message (format nil "режим обновлён: язык=~A, вывод=~A, голос=~A"
                                       (string-upcase (symbol-name (runtime-lang rt)))
-                                      (string-upcase (symbol-name (runtime-output-mode rt))))))
+                                      (string-upcase (symbol-name (runtime-output-mode rt)))
+                                      (runtime-active-voice rt))))
            (t
-            (%result :error :message "режим ожидает :язык ru|en и/или :вывод clean|verbose")))))
+            (%result :error :message "режим ожидает :язык, :вывод и/или :голос")))))
 
       ((member head '("clear" "очистить") :test #'string=)
        (%result :clear))

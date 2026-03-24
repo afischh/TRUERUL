@@ -4,6 +4,7 @@
   const statusRuntimeEl = document.getElementById('status-runtime');
   const statusLanguageEl = document.getElementById('status-language');
   const statusOutputModeEl = document.getElementById('status-output-mode');
+  const statusVoiceEl = document.getElementById('status-voice');
   const statusActivePaneEl = document.getElementById('status-active-pane');
   const statusArtifactEl = document.getElementById('status-artifact');
   const menuContextEl = document.getElementById('menu-context');
@@ -116,6 +117,17 @@
     '(сохранить-вид имя)',
     '(сохранить-таблицу имя)',
     '(сохранить-схему имя)',
+    '(слои)',
+    '(ритм)',
+    '(канон)',
+    '(голоса)',
+    '(голос синтез)',
+    '(режим :голос синтез)',
+    '(применить-голос синтез (схема понятие))',
+    '(гипотеза h1 (связь субъект отношение объект))',
+    '(спор тезис антитезис)',
+    '(заметка рабочая-заметка)',
+    '(вывод текущий-контур)',
     '(история)',
     '(назад)',
     '(повторить)',
@@ -150,6 +162,11 @@
     if (statusOutputModeEl) statusOutputModeEl.textContent = 'output: ' + normalized;
     if (modeCleanBtn) modeCleanBtn.classList.toggle('is-active', normalized === 'clean');
     if (modeVerboseBtn) modeVerboseBtn.classList.toggle('is-active', normalized === 'verbose');
+  }
+
+  function setVoiceStatus(voice) {
+    if (!statusVoiceEl) return;
+    statusVoiceEl.textContent = 'voice: ' + (voice || 'синтез');
   }
 
   function setActivePaneStatus(pane) {
@@ -464,6 +481,10 @@
     if (/\(режим\b[^\)]*:вывод\s+verbose/i.test(cmd)) setOutputMode('verbose');
     if (/\(режим\b[^\)]*:язык\s+ru/i.test(cmd)) setLanguageStatus('RU');
     if (/\(режим\b[^\)]*:язык\s+en/i.test(cmd)) setLanguageStatus('EN');
+    const voiceMatch = cmd.match(/\(режим\b[^\)]*:голос\s+([^\s\)]+)/i);
+    if (voiceMatch && voiceMatch[1]) setVoiceStatus(voiceMatch[1].toLowerCase());
+    const directVoiceMatch = cmd.match(/^\(голос\s+([^\s\)]+)/i);
+    if (directVoiceMatch && directVoiceMatch[1]) setVoiceStatus(directVoiceMatch[1].toLowerCase());
     rememberCommand(cmd);
     pushBottomLog('> ' + cmd);
     sendInput(cmd, true);
@@ -574,6 +595,7 @@
   setRuntimeStatus('-');
   setLanguageStatus('RU');
   setOutputMode('clean');
+  setVoiceStatus('синтез');
   setActivePaneStatus('console');
   setArtifactStatus('-');
 

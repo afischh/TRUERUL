@@ -12,10 +12,42 @@
   (command-history nil)
   (history-cursor 0 :type integer)
   (blocks (make-hash-table :test 'equal))
+  (voices (make-hash-table :test 'equal))
+  (active-voice "синтез")
+  (heuristic-log nil)
   (last-view nil))
 
+(defun %default-voice-definitions ()
+  (list
+   (list :name "сборка"
+         :stance "конструктивный генератор"
+         :focus "собирает рабочую структуру из фрагментов"
+         :tendencies '("собрать" "уточнить-сущности" "довести-до-рабочей-схемы")
+         :checks '("полнота-узлов" "явность-связей")
+         :keywords '("конструкция" "сборка" "каркас"))
+   (list :name "предел"
+         :stance "критический ограничитель"
+         :focus "находит противоречия, дыры и лишнее"
+         :tendencies '("сократить-шум" "проверить-границы" "поймать-конфликты")
+         :checks '("консистентность" "перегрузка" "неясные-связи")
+         :keywords '("ограничения" "риски" "контроль"))
+   (list :name "синтез"
+         :stance "структурный медиатор"
+         :focus "связывает конфликтующие части в читаемую схему"
+         :tendencies '("свести-контуры" "показать-композицию" "сделать-видимым-ритм")
+         :checks '("связность" "баланс" "читаемость")
+         :keywords '("структура" "мост" "интеграция"))))
+
+(defun %seed-default-voices (rt)
+  (dolist (voice (%default-voice-definitions))
+    (let ((name (%atom-name (%plist-value voice :name))))
+      (setf (gethash name (truerul-runtime-state-voices rt))
+            (append voice nil)))))
+
 (defun make-runtime ()
-  (make-truerul-runtime-state))
+  (let ((rt (make-truerul-runtime-state)))
+    (%seed-default-voices rt)
+    rt))
 
 (defun runtime-cycle (rt)
   (truerul-runtime-state-cycle rt))
@@ -77,6 +109,21 @@
 (defun runtime-blocks (rt)
   (truerul-runtime-state-blocks rt))
 
+(defun runtime-voices (rt)
+  (truerul-runtime-state-voices rt))
+
+(defun runtime-active-voice (rt)
+  (truerul-runtime-state-active-voice rt))
+
+(defun (setf runtime-active-voice) (value rt)
+  (setf (truerul-runtime-state-active-voice rt) value))
+
+(defun runtime-heuristic-log (rt)
+  (truerul-runtime-state-heuristic-log rt))
+
+(defun (setf runtime-heuristic-log) (value rt)
+  (setf (truerul-runtime-state-heuristic-log rt) value))
+
 (defun runtime-last-view (rt)
   (truerul-runtime-state-last-view rt))
 
@@ -115,6 +162,11 @@
 (defun %block-entries (rt)
   (let ((entries nil))
     (maphash (lambda (k v) (push (cons k v) entries)) (runtime-blocks rt))
+    (sort entries #'string< :key #'car)))
+
+(defun %voice-entries (rt)
+  (let ((entries nil))
+    (maphash (lambda (k v) (push (cons k v) entries)) (runtime-voices rt))
     (sort entries #'string< :key #'car)))
 
 (defun %atom-name (x)
