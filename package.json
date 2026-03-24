@@ -1,0 +1,18 @@
+{
+  "name": "truerul",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Truerul mobile terminal body v0",
+  "type": "module",
+  "scripts": {
+    "dev:web": "node apps/web/server.js",
+    "start:web": "node apps/web/server.js"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "express": "^4.21.2",
+    "node-pty": "^1.0.0",
+    "ws": "^8.18.1"
+  }
+}

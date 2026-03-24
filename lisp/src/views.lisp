@@ -1,0 +1,167 @@
+(in-package #:truerul-runtime)
+
+(defun %pad-right (text width)
+  (let* ((s (string text))
+         (len (length s)))
+    (if (>= len width)
+        s
+        (concatenate 'string s (make-string (- width len) :initial-element #\Space)))))
+
+(defun %join-tags (items)
+  (if items
+      (format nil "~{~A~^, ~}" (mapcar #'%atom-name items))
+      "-"))
+
+(defun make-categories-table-view ()
+  (let ((lines (list (format nil "~A  ~A  ~A"
+                             (%pad-right "категория" 24)
+                             (%pad-right "тип" 24)
+                             "теги")
+                     (make-string 76 :initial-element #\-))))
+    (dolist (entry *truerul-categories*)
+      (let ((name (%atom-name (second entry)))
+            (kind (%atom-name (%plist-value (cddr entry) :kind)))
+            (tags (%join-tags (%plist-value (cddr entry) :tags))))
+        (push (format nil "~A  ~A  ~A"
+                      (%pad-right name 24)
+                      (%pad-right kind 24)
+                      tags)
+              lines)))
+    (nreverse lines)))
+
+(defun make-tensions-table-view ()
+  (let ((lines (list (format nil "~A  ~A  ~A"
+                             (%pad-right "левая-сторона" 20)
+                             (%pad-right "правая-сторона" 20)
+                             "эффект")
+                     (make-string 72 :initial-element #\-))))
+    (dolist (entry *truerul-tensions*)
+      (let ((left (%atom-name (second entry)))
+            (right (%atom-name (third entry)))
+            (effect (%join-tags (%plist-value (cddr entry) :effect))))
+        (push (format nil "~A  ~A  ~A"
+                      (%pad-right left 20)
+                      (%pad-right right 20)
+                      effect)
+              lines)))
+    (nreverse lines)))
+
+(defun make-dichotomies-table-view ()
+  (let ((lines (list "левая-сторона        <-> правая-сторона       напряжение"
+                     (make-string 68 :initial-element #\-))))
+    (dolist (entry *truerul-dichotomies*)
+      (let ((left (%atom-name (second entry)))
+            (right (%atom-name (third entry)))
+            (tension (%join-tags (%plist-value (cddr entry) :tension))))
+        (push (format nil "~A <-> ~A ~A"
+                      (%pad-right left 20)
+                      (%pad-right right 20)
+                      tension)
+              lines)))
+    (nreverse lines)))
+
+(defun make-categories-tree-view ()
+  (let ((groups (make-hash-table :test 'equal)))
+    (dolist (entry *truerul-categories*)
+      (let* ((plist (cddr entry))
+             (kind (%atom-name (%plist-value plist :kind)))
+             (name (%atom-name (second entry)))
+             (current (gethash kind groups)))
+        (setf (gethash kind groups) (append current (list name)))))
+    (let ((kinds nil))
+      (maphash (lambda (k _v) (declare (ignore _v)) (push k kinds)) groups)
+      (setf kinds (sort kinds #'string<))
+      (let ((lines (list "дерево-категорий")))
+        (dolist (kind kinds)
+          (push (format nil "├─ ~A" kind) lines)
+          (let ((items (sort (copy-list (gethash kind groups)) #'string<)))
+            (dolist (item items)
+              (push (format nil "│  ├─ ~A" item) lines))))
+        (nreverse lines)))))
+
+(defun %normalize-view-kind (kind)
+  (let ((name (%atom-name kind)))
+    (cond
+      ((member name '("categories" "category" "категории" "категория") :test #'string=) "categories")
+      ((member name '("tensions" "tension" "напряжения" "напряжение") :test #'string=) "tensions")
+      ((member name '("dichotomies" "dichotomy" "дихотомии" "дихотомия") :test #'string=) "dichotomies")
+      ((member name '("category-tree" "tree-categories" "дерево-категорий") :test #'string=) "category-tree")
+      ((member name '("scheme" "схема") :test #'string=) "scheme")
+      (t name))))
+
+(defun %library-note-line (concept)
+  (let ((entry (%library-category concept)))
+    (when entry
+      (let ((note (%plist-value (cddr entry) :note))
+            (kind (%plist-value (cddr entry) :kind)))
+        (list (format nil "категория: ~A" (%atom-name concept))
+              (format nil "тип: ~A" (%atom-name kind))
+              (format nil "заметка: ~A" note))))))
+
+(defun %tension-lines-for (concept-name)
+  (let ((lines nil))
+    (dolist (entry *truerul-tensions*)
+      (let ((left (%atom-name (second entry)))
+            (right (%atom-name (third entry))))
+        (when (or (string= left concept-name) (string= right concept-name))
+          (push (format nil "напряжение: ~A <-> ~A | эффект: ~A"
+                        left right
+                        (%join-tags (%plist-value (cddr entry) :effect)))
+                lines))))
+    (nreverse lines)))
+
+(defun %dichotomy-lines-for (concept-name)
+  (let ((lines nil))
+    (dolist (entry *truerul-dichotomies*)
+      (let ((left (%atom-name (second entry)))
+            (right (%atom-name (third entry))))
+        (when (or (string= left concept-name) (string= right concept-name))
+          (push (format nil "дихотомия: ~A <-> ~A | напряжение: ~A"
+                        left right
+                        (%join-tags (%plist-value (cddr entry) :tension)))
+                lines))))
+    (nreverse lines)))
+
+(defun %runtime-relation-lines-for (rt concept-name)
+  (let ((lines nil))
+    (dolist (rel (runtime-relations rt))
+      (let ((subject (getf rel :subject))
+            (predicate (getf rel :predicate))
+            (object (getf rel :object)))
+        (when (or (string= subject concept-name) (string= object concept-name))
+          (push (format nil "связь: ~A --~A--> ~A" subject predicate object) lines))))
+    (nreverse lines)))
+
+(defun make-concept-scheme-view (rt concept)
+  (let* ((concept-name (%atom-name concept))
+         (lines (list (format nil "схема: ~A" concept-name)
+                      (make-string 68 :initial-element #\-))))
+    (let ((note-lines (%library-note-line concept)))
+      (when note-lines
+        (setf lines (append lines note-lines (list "")))))
+    (let ((relation-lines (%runtime-relation-lines-for rt concept-name))
+          (tension-lines (%tension-lines-for concept-name))
+          (dichotomy-lines (%dichotomy-lines-for concept-name)))
+      (when relation-lines
+        (setf lines (append lines (list "runtime-связи:") relation-lines (list ""))))
+      (when tension-lines
+        (setf lines (append lines (list "библиотечные-напряжения:") tension-lines (list ""))))
+      (when dichotomy-lines
+        (setf lines (append lines (list "библиотечные-дихотомии:") dichotomy-lines (list ""))))
+      (unless (or relation-lines tension-lines dichotomy-lines)
+        (setf lines (append lines (list "нет явных связей/напряжений для этого понятия")))))
+    (list :title (format nil "схема ~A" concept-name)
+          :lines lines)))
+
+(defun make-library-view (kind)
+  (let ((name (%normalize-view-kind kind)))
+    (cond
+      ((string= name "categories")
+       (list :title "вид: категории" :lines (make-categories-table-view)))
+      ((string= name "tensions")
+       (list :title "вид: напряжения" :lines (make-tensions-table-view)))
+      ((string= name "dichotomies")
+       (list :title "вид: дихотомии" :lines (make-dichotomies-table-view)))
+      ((string= name "category-tree")
+       (list :title "вид: дерево-категорий" :lines (make-categories-tree-view)))
+      (t nil))))

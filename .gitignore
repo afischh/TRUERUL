@@ -9,3 +9,7 @@ coverage/
 apps/web/.next/
 apps/web/out/
 apps/web/.vercel/
+lisp/artifacts/
+apps/web/server.pid
+apps/web/server-*.pid
+apps/web/server*.log

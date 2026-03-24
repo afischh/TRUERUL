@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>TRUERUL</title>
+    <link rel="stylesheet" href="/vendor/xterm/css/xterm.css" />
+    <link rel="stylesheet" href="/main.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="header-strip">
+        <div class="title-wrap">
+          <div class="title">TRUERUL</div>
+          <div class="subtitle">quoted forms / terminal body</div>
+        </div>
+        <div class="status-wrap">
+          <span class="badge">RU</span>
+          <span class="status" id="connection-status">booting</span>
+        </div>
+      </header>
+
+      <main class="terminal-wrap">
+        <div id="terminal"></div>
+      </main>
+
+      <section class="softkeys" aria-label="Языковые клавиши">
+        <div class="softkeys-row softkeys-row-symbols">
+          <button type="button" data-insert="(">(</button>
+          <button type="button" data-insert=")">)</button>
+          <button type="button" data-insert=":">:</button>
+          <button type="button" data-insert="?">?</button>
+        </div>
+        <div class="softkeys-row softkeys-row-forms">
+          <button type="button" data-insert="(сущность ">(сущность</button>
+          <button type="button" data-insert="(связь ">(связь</button>
+          <button type="button" data-insert="(состояние ">(состояние</button>
+          <button type="button" data-insert="(запрос ">(запрос</button>
+        </div>
+      </section>
+
+      <nav class="action-strip" aria-label="Быстрые действия">
+        <button type="button" data-command="(помощь)" data-enter="1">помощь</button>
+        <button type="button" data-command="(журнал)" data-enter="1">журнал</button>
+        <button type="button" data-command="(вид категории)" data-enter="1">вид</button>
+        <button type="button" data-command="(очистить)" data-enter="1">очистить</button>
+      </nav>
+    </div>
+
+    <script src="/vendor/xterm/xterm.js"></script>
+    <script src="/vendor/xterm-addon-fit/addon-fit.js"></script>
+    <script src="/client.js"></script>
+  </body>
+</html>

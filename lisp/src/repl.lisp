@@ -1,0 +1,188 @@
+(in-package #:truerul-runtime)
+
+(defun %color (code text)
+  (format nil "~C[~Am~A~C[0m" #\Esc code text #\Esc))
+
+(defun %line (fmt &rest args)
+  (apply #'format t (concatenate 'string fmt "~%") args))
+
+(defun %clear-screen ()
+  (format t "~C[2J~C[H" #\Esc #\Esc)
+  (finish-output))
+
+(defun %banner (rt)
+  (%clear-screen)
+  (%line "~A ~A"
+         (%color "36;1" "TRUERUL")
+         (%color "90" (format nil ":: ~A :: ~A :: cycle ~2,'0D"
+                               (string-upcase (symbol-name (runtime-lang rt)))
+                               (string-upcase (symbol-name (runtime-output-mode rt)))
+                               (runtime-cycle rt))))
+  (%line "~A" (%color "90" "lisp heart / quoted forms L1"))
+  (%line ""))
+
+(defun %prompt ()
+  (format t "~A " (%color "38;5;173" ">"))
+  (finish-output))
+
+(defun %show-help ()
+  (%line "~A" (%color "33" "[помощь]"))
+  (%line "(сущность <имя> :тип <тип>)")
+  (%line "(связь <левая> <отношение> <правая>)")
+  (%line "(состояние <цель> <состояние>)")
+  (%line "(запрос <шаблон>)")
+  (%line "(запрос (связь? <левая> <отношение> X))")
+  (%line "(запрос (сущность? <имя> :тип _))")
+  (%line "(запрос (состояние? <цель> X))")
+  (%line "(фигура <имя>)")
+  (%line "(категория <имя>)")
+  (%line "(дихотомия <левая> <правая>)")
+  (%line "(напряжение <левая> <правая>)")
+  (%line "(карточка-цитаты <имя>)")
+  (%line "(вид категории)")
+  (%line "(вид напряжения)")
+  (%line "(вид дихотомии)")
+  (%line "(вид дерево-категорий)")
+  (%line "(вид схема <понятие>)")
+  (%line "(схема <понятие>)")
+  (%line "(помощь <понятие>)")
+  (%line "(цитата <форма>)")
+  (%line "(вычислить <форма>)")
+  (%line "(журнал)")
+  (%line "(история)")
+  (%line "(назад)")
+  (%line "(повторить)")
+  (%line "(буфер)")
+  (%line "(блок <имя> <форма>)")
+  (%line "(вставить-блок <имя>)")
+  (%line "(сохранить <имя>)")
+  (%line "(сохранить-вид <имя>)")
+  (%line "(сохранить-таблицу <имя>)")
+  (%line "(сохранить-схему <имя>)")
+  (%line "(сохранить-выделенное <имя>)")
+  (%line "(шаг)")
+  (%line "(режим :язык ru|en)")
+  (%line "(режим :вывод clean|verbose)")
+  (%line "(помощь)"))
+
+(defun %show-query (matches)
+  (%line "~A" (%color "33" "[запрос]"))
+  (if matches
+      (dolist (binding matches)
+        (if binding
+            (%line "~{~A = ~A~^, ~}" (loop for (k . v) in binding append (list k v)))
+            (%line "~A" (%color "90" "true"))))
+      (%line "~A" (%color "90" "∅"))))
+
+(defun %show-log (entries)
+  (%line "~A" (%color "33" "[журнал]"))
+  (if entries
+      (loop for entry in entries
+            for index from 1 do
+              (case (getf entry :type)
+                (:entity (%line "~2,'0D. сущность ~A :тип ~A" index (getf entry :id) (getf entry :kind)))
+                (:relation (%line "~2,'0D. связь ~A ~A ~A" index (getf entry :subject) (getf entry :predicate) (getf entry :object)))
+                (:state (%line "~2,'0D. состояние ~A ~A" index (getf entry :target) (getf entry :state)))
+                (:query (%line "~2,'0D. запрос ~A" index (getf entry :pattern)))
+                (:step (%line "~2,'0D. шаг -> цикл ~A" index (getf entry :cycle)))
+                (otherwise (%line "~2,'0D. ~S" index entry))))
+      (%line "~A" (%color "90" "журнал пока пуст"))))
+
+(defun %show-library-card (entry)
+  (let* ((head (%atom-name (first entry)))
+         (head-ru (cond
+                    ((string= head "figure") "фигура")
+                    ((string= head "category") "категория")
+                    ((string= head "dichotomy") "дихотомия")
+                    ((string= head "tension") "напряжение")
+                    ((string= head "quote-card") "карточка-цитаты")
+                    ((string= head "help-note") "помощь")
+                    (t head)))
+        (name (%atom-name (second entry)))
+        (plist (cddr entry)))
+    (%line "~A ~A" (%color "33" (format nil "[~A]" head-ru)) name)
+    (loop for (k v) on plist by #'cddr do
+      (case k
+        (:note (%line "заметка: ~A" v))
+        (:summary (%line "сводка: ~A" v))
+        (:hint (%line "намёк: ~A" v))
+        (:kind (%line "тип: ~A" (%atom-name v)))
+        (:figure (%line "фигура: ~A" (%atom-name v)))
+        (:theme (%line "тема: ~A" (%atom-name v)))
+        (:related (%line "связано: ~{~A~^, ~}" (mapcar #'%atom-name v)))
+        (:tags (%line "теги: ~{~A~^, ~}" (mapcar #'%atom-name v)))
+        (:voices (%line "голоса: ~{~A~^, ~}" (mapcar #'%atom-name v)))
+        (:affinities (%line "сродства: ~{~A~^, ~}" (mapcar #'%atom-name v)))
+        (:opposes (%line "возражает: ~{~A~^, ~}" (mapcar #'%atom-name v)))
+        (:tension (%line "напряжение: ~{~A~^, ~}" (mapcar #'%atom-name v)))
+        (:effect (%line "эффект: ~{~A~^, ~}" (mapcar #'%atom-name v)))
+        (:text (%line "текст: ~A" v))
+        (:target
+         (if (listp v)
+             (%line "цель: ~{~A~^, ~}" (mapcar #'%atom-name v))
+             (%line "цель: ~A" (%atom-name v))))
+        (:suggested-queries
+         (%line "предлагаемые-запросы:")
+         (dolist (q v)
+           (%line "  ~A" (%print-form q))))))))
+
+(defun %show-view (entry)
+  (%line "~A ~A" (%color "33" "[вид]") (getf entry :title))
+  (dolist (line (getf entry :lines))
+    (%line "~A" line)))
+
+(defun %show-history (forms)
+  (%line "~A" (%color "33" "[история]"))
+  (if forms
+      (loop for item in forms
+            for index from 1 do
+              (%line "~2,'0D. ~A" index (%print-form item)))
+      (%line "~A" (%color "90" "история пока пуста"))))
+
+(defun %show-buffer (entries)
+  (%line "~A" (%color "33" "[буфер]"))
+  (if entries
+      (loop for entry in entries
+            for index from 1 do
+              (%line "~2,'0D. ~A :: ~A"
+                     index
+                     (getf entry :name)
+                     (getf entry :preview)))
+      (%line "~A" (%color "90" "буфер пуст"))))
+
+(defun %show-result (result)
+  (case (getf result :kind)
+    (:silent nil)
+    (:ok (%line "~A ~A" (%color "32" "[ok]") (getf result :message)))
+    (:error (%line "~A ~A" (%color "31" "[ошибка]") (getf result :message)))
+    (:note (%line "~A ~A" (%color "33" "[заметка]") (getf result :message)))
+    (:query (%show-query (getf result :matches)))
+    (:form (%line "~A" (%color "36" "[форма]"))
+           (%line "~A" (%print-form (getf result :form))))
+    (:log (%show-log (getf result :entries)))
+    (:history (%show-history (getf result :forms)))
+    (:history-nav (%line "~A ~A" (%color "33" "[назад]") (getf result :message))
+                  (%line "~A" (%print-form (getf result :form))))
+    (:buffer (%show-buffer (getf result :entries)))
+    (:library-card (%show-library-card (getf result :entry)))
+    (:view (%show-view (getf result :entry)))
+    (:help (%show-help))
+    (:clear (%clear-screen))
+    (otherwise (%line "~A" (%color "31" "[ошибка] неузнанный тип результата")))))
+
+(defun run-truerul-repl ()
+  (let ((rt (make-runtime)))
+    (%banner rt)
+    (loop
+      (%prompt)
+      (handler-case
+          (let ((line (read-line *standard-input* nil :eof)))
+            (when (eq line :eof)
+              (%line "")
+              (return))
+            (unless (string= (string-trim '(#\Space #\Tab) line) "")
+              (let* ((form (parse-truerul-form line))
+                     (result (evaluate-form rt form)))
+                (%show-result result))))
+        (error (e)
+          (%line "~A ~A" (%color "31" "[ошибка]") e))))))
