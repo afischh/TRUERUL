@@ -11,6 +11,7 @@
                (:file "library/tensions")
                (:file "library/quote-cards")
                (:file "library/help-notes")
+               (:file "src/lib-layer")
                (:file "src/query")
                (:file "src/views")
                (:file "src/evaluator")

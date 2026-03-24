@@ -94,6 +94,14 @@
             <h2>Артефакты</h2>
             <button type="button" id="left-open-views">Открыть просмотр</button>
           </section>
+
+          <section class="left-section">
+            <h2>.lib</h2>
+            <button type="button" data-command="(lib-индекс)" data-enter="1">переиндексировать</button>
+            <button type="button" data-command="(lib-список :domain logic)" data-enter="1">список logic</button>
+            <button type="button" data-command="(lib-подобрать :domain foundations :input-kind type-judgement)" data-enter="1">маршрут foundations</button>
+            <button type="button" data-command="(ассист \"если связь неопределенна\")" data-enter="1">assist parse</button>
+          </section>
         </aside>
 
         <section class="center-pane" aria-label="Живая консоль Truerul">
@@ -156,6 +164,13 @@
                     <option value="(спор тезис антитезис)">(спор ...)</option>
                     <option value="(заметка краткий-текст)">(заметка ...)</option>
                     <option value="(вывод текущий-контур)">(вывод ...)</option>
+                  </optgroup>
+                  <optgroup label=".lib / Assist">
+                    <option value="(lib-индекс)">(lib-индекс)</option>
+                    <option value="(lib-список :domain logic :cost 3)">(lib-список ...)</option>
+                    <option value="(lib-подобрать :logic-mode fuzzy :input-kind proposition)">(lib-подобрать ...)</option>
+                    <option value="(ассист &quot;если есть противоречие в связи&quot; :role parse-assist)">(ассист ...)</option>
+                    <option value="(оператор &quot;если данные противоречат друг другу&quot; :domain logic)">(оператор ...)</option>
                   </optgroup>
                 </select>
                 <button type="button" id="palette-insert">Вставить</button>
@@ -290,6 +305,8 @@
             <h2>Справка</h2>
             <ul>
               <li>Страты языка: Мир, Запрос, Вид, Библиотека, Мастерская, Голоса/Эвристика.</li>
+              <li>.lib-слой: индексация, фильтрация и маршрутизация до исполнения.</li>
+              <li>LLM здесь только assist-layer (parse/routing/hypothesis), не ядро истины.</li>
               <li>Меню сверху задаёт рабочий контекст правой панели.</li>
               <li>Левая панель — библиотека и навигация по фигурам/категориям.</li>
               <li>Центр — живой терминал Truerul (основная рабочая зона).</li>
@@ -303,6 +320,8 @@
                 <button type="button" data-command="(слои)" data-enter="1">показать слои</button>
                 <button type="button" data-command="(ритм)" data-enter="1">показать ритм</button>
                 <button type="button" data-command="(канон)" data-enter="1">канонизация</button>
+                <button type="button" data-command="(lib-индекс)" data-enter="1">индекс .lib</button>
+                <button type="button" data-command="(оператор &quot;если гипотеза противоречива&quot; :domain logic)" data-enter="1">pipeline оператор</button>
               </div>
             </div>
           </section>

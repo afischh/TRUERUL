@@ -1,0 +1,30 @@
+(:id "logic.classical"
+ :name "Classical Logic Core"
+ :family "logic"
+ :domain "logic"
+ :strictness "strict"
+ :logic-mode "classical"
+ :ontology-mode "set"
+ :maturity "stable"
+ :input-kinds ("proposition" "rule" "query")
+ :output-kinds ("truth-class" "diagnosis")
+ :cost 1
+ :operators ((:id "modus-ponens"
+              :input-kinds ("rule" "fact")
+              :output-kinds ("proposition")
+              :signature "A, A->B => B")
+             (:id "consistency-check"
+              :input-kinds ("query")
+              :output-kinds ("diagnosis")
+              :signature "detect contradiction in strict classical mode"))
+ :automata ((:id "truth-eval-classical"
+            :classification ("истина" "ложь" "неопределённо")
+            :notes "strict bivalent contour with unknown as undecided input")
+           (:id "router-classical"
+            :classification ("возможно")
+            :notes "fallback when proposition is incomplete"))
+ :requires ()
+ :notes ("base strict classical route"
+         "first-class for deterministic checks"
+         "includes applicability filters in input/output/cost axes"))
+

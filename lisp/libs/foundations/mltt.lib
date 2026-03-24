@@ -1,0 +1,29 @@
+(:id "foundations.mltt"
+ :name "MLTT Foundations Core"
+ :family "foundations"
+ :domain "foundations"
+ :strictness "strict"
+ :logic-mode "many-valued"
+ :ontology-mode "type"
+ :maturity "growing"
+ :input-kinds ("type-judgement" "term" "query")
+ :output-kinds ("truth-class" "diagnosis")
+ :cost 4
+ :operators ((:id "type-check"
+              :input-kinds ("term" "type-judgement")
+              :output-kinds ("diagnosis")
+              :signature "Gamma |- t : A")
+             (:id "normalization"
+              :input-kinds ("term")
+              :output-kinds ("term")
+              :signature "beta/eta normal form"))
+ :automata ((:id "mltt-judgement-classifier"
+            :classification ("истина" "ложь" "неопределённо")
+            :notes "judgement-level classification")
+           (:id "mltt-ontology-guard"
+            :classification ("несовместимо-с-онтологией")
+            :notes "when request is outside type ontology"))
+ :requires ("logic.classical")
+ :notes ("type-theoretic foundation library"
+         "strict in ontology-mode=type"))
+

@@ -11,6 +11,9 @@
   (form-log nil)
   (command-history nil)
   (history-cursor 0 :type integer)
+  (lib-registry (make-hash-table :test 'equal))
+  (lib-list nil)
+  (lib-indexed-at nil)
   (blocks (make-hash-table :test 'equal))
   (voices (make-hash-table :test 'equal))
   (active-voice "синтез")
@@ -109,6 +112,21 @@
 (defun runtime-blocks (rt)
   (truerul-runtime-state-blocks rt))
 
+(defun runtime-lib-registry (rt)
+  (truerul-runtime-state-lib-registry rt))
+
+(defun runtime-lib-list (rt)
+  (truerul-runtime-state-lib-list rt))
+
+(defun (setf runtime-lib-list) (value rt)
+  (setf (truerul-runtime-state-lib-list rt) value))
+
+(defun runtime-lib-indexed-at (rt)
+  (truerul-runtime-state-lib-indexed-at rt))
+
+(defun (setf runtime-lib-indexed-at) (value rt)
+  (setf (truerul-runtime-state-lib-indexed-at rt) value))
+
 (defun runtime-voices (rt)
   (truerul-runtime-state-voices rt))
 
@@ -192,3 +210,11 @@
     ((symbolp form)
      (%atom-name form))
     (t (princ-to-string form))))
+
+(defun %value->text (value)
+  (cond
+    ((null value) "")
+    ((stringp value) value)
+    ((symbolp value) (%atom-name value))
+    ((listp value) (%print-form value))
+    (t (princ-to-string value))))

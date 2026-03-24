@@ -78,14 +78,6 @@
       (%result :silent)
       (%result :ok :message message)))
 
-(defun %value->text (value)
-  (cond
-    ((null value) "")
-    ((stringp value) value)
-    ((symbolp value) (%atom-name value))
-    ((listp value) (%print-form value))
-    (t (princ-to-string value))))
-
 (defun %normalize-string-list (value)
   (cond
     ((null value) nil)
@@ -336,6 +328,55 @@
 
       ((member head '("canon" "канон" "чистка-языка") :test #'string=)
        (%result :view :entry (list :title "канонизация поверхности" :lines (%cleanup-lines))))
+
+      ((member head '("lib-reindex" "lib-переиндексировать" "lib-индекс") :test #'string=)
+       (let ((libs (%lib-index-runtime rt :force t)))
+         (%result :view
+                  :entry (list :title ".lib индекс"
+                               :lines (list (format nil "indexed-at: ~A" (runtime-lib-indexed-at rt))
+                                            (format nil "loaded: ~D" (length libs)))))))
+
+      ((member head '("lib-list" "lib-список") :test #'string=)
+       (let* ((filters (cdr form))
+              (libs (%lib-filter-runtime rt filters :force-index nil)))
+         (%result :view :entry (%lib-list-view libs ".lib список"))))
+
+      ((member head '("lib-route" "lib-подобрать" "lib-маршрут") :test #'string=)
+       (let* ((filters (cdr form))
+              (route (%lib-route-runtime rt filters :force-index nil)))
+         (%result :view :entry (%lib-route-view route ".lib маршрут"))))
+
+      ((member head '("assist" "ассист") :test #'string=)
+       (let* ((operator-input (second form))
+              (args (cddr form))
+              (role (or (%plist-value args :role)
+                        (%plist-value args :роль)))
+              (assist (%assist-runtime rt (%value->text operator-input) :role (%value->text role))))
+         (%result :view :entry (%assist-view assist "assist-layer"))))
+
+      ((member head '("operator" "оператор") :test #'string=)
+       (let* ((operator-input (second form))
+              (filters (cddr form))
+              (pipeline (%operator-pipeline-runtime rt (%value->text operator-input) filters))
+              (selected (getf pipeline :selected-lib))
+              (route-lines (if (getf pipeline :route)
+                               (loop for item in (getf pipeline :route)
+                                     collect (format nil "score=~D :: ~A"
+                                                     (getf item :score)
+                                                     (getf (getf item :lib) :id)))
+                               (list "route empty"))))
+         (%push-log rt (list :type :lib-pipeline
+                             :class (getf pipeline :class)
+                             :lib (and selected (getf selected :id))
+                             :voice (runtime-active-voice rt)))
+         (%result :classification
+                  :class (getf pipeline :class)
+                  :reason (getf pipeline :reason)
+                  :lib (and selected (getf selected :id))
+                  :voice (runtime-active-voice rt)
+                  :normalized-forms (getf (getf pipeline :assist) :normalized-forms)
+                  :filters (getf pipeline :filters)
+                  :route route-lines)))
 
       ((member head '("voices" "голоса") :test #'string=)
        (%result :view :entry (%voices-list-view rt)))

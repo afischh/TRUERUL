@@ -1,0 +1,29 @@
+(:id "logic.paraconsistent"
+ :name "Paraconsistent Logic Core"
+ :family "logic"
+ :domain "logic"
+ :strictness "semi-strict"
+ :logic-mode "paraconsistent"
+ :ontology-mode "mixed"
+ :maturity "beta"
+ :input-kinds ("proposition" "query" "conflict-report")
+ :output-kinds ("truth-class" "diagnosis")
+ :cost 3
+ :operators ((:id "non-explosive-check"
+              :input-kinds ("conflict-report")
+              :output-kinds ("diagnosis")
+              :signature "A and not-A does not imply arbitrary B")
+             (:id "conflict-isolation"
+              :input-kinds ("query")
+              :output-kinds ("truth-class")
+              :signature "localize contradictory fragments"))
+ :automata ((:id "paraconsistent-classifier"
+            :classification ("возможно-в-режиме-paraconsistent" "неопределённо" "ложь")
+            :notes "conflict-tolerant evaluation")
+           (:id "conflict-diagnosis"
+            :classification ("несовместимо-с-онтологией")
+            :notes "when requested ontology is stricter than conflict context"))
+ :requires ("logic.classical")
+ :notes ("handles contradictory operator statements safely"
+         "critical voice uses this route for diagnosis"))
+

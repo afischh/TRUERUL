@@ -1,0 +1,29 @@
+(:id "foundations.uf"
+ :name "Univalent Foundations Core"
+ :family "foundations"
+ :domain "foundations"
+ :strictness "semi-strict"
+ :logic-mode "dynamic-epistemic"
+ :ontology-mode "type"
+ :maturity "experimental"
+ :input-kinds ("identity-claim" "type-judgement" "query")
+ :output-kinds ("truth-class" "hypothesis" "diagnosis")
+ :cost 5
+ :operators ((:id "equivalence-lift"
+              :input-kinds ("identity-claim")
+              :output-kinds ("hypothesis")
+              :signature "equiv(A,B) -> path(A,B) draft")
+             (:id "univalence-check"
+              :input-kinds ("query")
+              :output-kinds ("diagnosis")
+              :signature "verify if request can be interpreted in UF contour"))
+ :automata ((:id "uf-classifier"
+            :classification ("возможно-в-режиме-dynamic-epistemic" "требует-новой-гипотезы" "неопределённо")
+            :notes "experimental contour for higher identity claims")
+           (:id "uf-compatibility"
+            :classification ("несовместимо-с-онтологией")
+            :notes "when request is set-only and cannot be lifted"))
+ :requires ("foundations.mltt")
+ :notes ("univalent contour as lightweight experimental module"
+         "not final proof engine in v1"))
+

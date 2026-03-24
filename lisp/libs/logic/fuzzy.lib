@@ -1,0 +1,29 @@
+(:id "logic.fuzzy"
+ :name "Fuzzy Logic Core"
+ :family "logic"
+ :domain "logic"
+ :strictness "heuristic"
+ :logic-mode "fuzzy"
+ :ontology-mode "mixed"
+ :maturity "beta"
+ :input-kinds ("proposition" "query" "signal")
+ :output-kinds ("truth-class" "hypothesis")
+ :cost 2
+ :operators ((:id "membership-eval"
+              :input-kinds ("signal")
+              :output-kinds ("truth-class")
+              :signature "mu(x) in [0..1]")
+             (:id "fuzzy-rule-compose"
+              :input-kinds ("rule" "query")
+              :output-kinds ("hypothesis")
+              :signature "t-norm / t-conorm draft"))
+ :automata ((:id "fuzzy-classifier"
+            :classification ("возможно" "возможно-в-режиме-fuzzy" "неопределённо")
+            :notes "graded truth contour")
+           (:id "fuzzy-hypothesis"
+            :classification ("требует-новой-гипотезы")
+            :notes "when evidence is weak"))
+ :requires ("logic.classical")
+ :notes ("for uncertain/graded operator language"
+         "assist-friendly route for hypothesis drafts"))
+
