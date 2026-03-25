@@ -14,6 +14,7 @@
                (:file "src/lib-layer")
                (:file "src/query")
                (:file "src/views")
+               (:file "src/worlds")
                (:file "src/evaluator")
                (:file "src/reader")
                (:file "src/repl")))

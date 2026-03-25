@@ -84,6 +84,17 @@
           </section>
 
           <section class="left-section">
+            <h2>Миры</h2>
+            <button type="button" data-command="(миры)" data-enter="1">список миров</button>
+            <button type="button" data-insert="(мир world-a)">(мир world-a)</button>
+            <button type="button" data-insert="(мир world-b)">(мир world-b)</button>
+            <button type="button" data-insert="(сравнить-миры world-a world-b)">(сравнить-миры A B)</button>
+            <button type="button" data-insert="(объединить-миры world-a world-b :в world-merge)">(объединить-миры A B :в C)</button>
+            <button type="button" data-insert="(вычесть-мир world-a world-b :в world-diff)">(вычесть-мир A B :в C)</button>
+            <button type="button" data-command="(классы-вывода)" data-enter="1">классы вывода</button>
+          </section>
+
+          <section class="left-section">
             <h2>Блоки</h2>
             <button type="button" id="left-insert-block">Вставить по имени</button>
             <button type="button" id="left-save-block">Сохранить текущий</button>
@@ -116,6 +127,8 @@
             <button type="button" data-command="(очистить)" data-enter="1">очистить</button>
             <button type="button" data-command="(назад)" data-enter="1">назад</button>
             <button type="button" data-command="(буфер)" data-enter="1">буфер</button>
+            <button type="button" data-command="(миры)" data-enter="1">миры</button>
+            <button type="button" data-command="(классы-вывода)" data-enter="1">классы</button>
             <button type="button" data-insert="(запрос (связь? субъект отношение X))">запрос связь?</button>
             <button type="button" data-insert="(запрос (сущность? имя :тип _))">запрос сущность?</button>
             <button type="button" data-insert="(запрос (состояние? цель X))">запрос состояние?</button>
@@ -134,6 +147,14 @@
                     <option value="(сущность имя :тип тип)">(сущность ... :тип ...)</option>
                     <option value="(связь левая отношение правая)">(связь ... ... ...)</option>
                     <option value="(состояние цель состояние)">(состояние ... ...)</option>
+                    <option value="(мир world-a)">(мир world-a)</option>
+                    <option value="(мир world-b)">(мир world-b)</option>
+                    <option value="(миры)">(миры)</option>
+                    <option value="(мир-показать world-a)">(мир-показать ...)</option>
+                    <option value="(мир-активировать world-a)">(мир-активировать ...)</option>
+                    <option value="(сравнить-миры world-a world-b)">(сравнить-миры A B)</option>
+                    <option value="(объединить-миры world-a world-b :в world-merge)">(объединить-миры A B :в C)</option>
+                    <option value="(вычесть-мир world-a world-b :в world-diff)">(вычесть-мир A B :в C)</option>
                   </optgroup>
                   <optgroup label="Запрос">
                     <option value="(запрос (связь? субъект отношение X))">(запрос (связь? ...))</option>
@@ -306,7 +327,9 @@
             <ul>
               <li>Страты языка: Мир, Запрос, Вид, Библиотека, Мастерская, Голоса/Эвристика.</li>
               <li>.lib-слой: индексация, фильтрация и маршрутизация до исполнения.</li>
+              <li>Миры как объекты: снимок, список, активация, сравнение/объединение/вычитание.</li>
               <li>LLM здесь только assist-layer (parse/routing/hypothesis), не ядро истины.</li>
+              <li>Вывод классифицирован: истина/ложь/неопределённо/возможно/диагноз/конструкция/кандидат.</li>
               <li>Меню сверху задаёт рабочий контекст правой панели.</li>
               <li>Левая панель — библиотека и навигация по фигурам/категориям.</li>
               <li>Центр — живой терминал Truerul (основная рабочая зона).</li>

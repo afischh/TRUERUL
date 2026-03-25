@@ -88,7 +88,9 @@
   (list
    (list :family "Мир"
          :note "Онтологическое построение фрагмента мира."
-         :heads '("сущность" "связь" "состояние"))
+         :heads '("сущность" "связь" "состояние"
+                  "мир" "миры" "мир-показать" "мир-активировать"
+                  "сравнить-миры" "объединить-миры" "вычесть-мир"))
    (list :family "Запрос"
          :note "Проверка и извлечение без изменения мира."
          :heads '("запрос" "связь?" "сущность?" "состояние?"))
@@ -103,7 +105,7 @@
          :heads '("буфер" "блок" "блоки" "вставить-блок" "выполнить-блок"
                   "история" "назад" "повторить"
                   "сохранить" "сохранить-вид" "сохранить-таблицу" "сохранить-схему"
-                  "очистить" "режим"))
+                  "очистить" "режим" "классы-вывода"))
    (list :family "Голоса/Эвристика"
          :note "Режимы рассуждения, гипотезы и сравнительные проходы."
          :heads '("голоса" "голос" "применить-голос" "гипотеза" "спор" "заметка" "вывод"))))
@@ -220,6 +222,7 @@
                               :kind (%atom-name kind)
                               :attrs rest)))
            (setf (gethash (%atom-name id) (runtime-entities rt)) entity)
+           (%sync-active-world-from-runtime rt :source "entity")
            (%push-form-log rt form)
            (%push-log rt (list :type :entity
                                :id (%atom-name id)
@@ -236,6 +239,7 @@
                           :predicate (%atom-name predicate)
                           :object (%atom-name object))))
            (setf (runtime-relations rt) (append (runtime-relations rt) (list rel)))
+           (%sync-active-world-from-runtime rt :source "relation")
            (%push-form-log rt form)
            (%push-log rt (list :type :relation
                                :subject (%atom-name subject)
@@ -253,6 +257,7 @@
          (let ((st (list :target (%atom-name target)
                          :state (%atom-name state))))
            (setf (runtime-states rt) (append (runtime-states rt) (list st)))
+           (%sync-active-world-from-runtime rt :source "state")
            (%push-form-log rt form)
            (%push-log rt (list :type :state
                                :target (%atom-name target)
@@ -261,6 +266,158 @@
                           (format nil "состояние зарегистрировано: ~A :: ~A"
                                   (%atom-name target)
                                   (%atom-name state))))))
+
+      ((member head '("world" "мир") :test #'string=)
+       (let ((name (second form)))
+         (if (null name)
+             (%result :error :message "мир ожидает имя: (мир <имя>)")
+             (let* ((wname (%world-normalize-name name))
+                    (world (%store-world rt (%make-world-object rt wname :source "command:мир"))))
+               (%push-log rt (list :type :world-snapshot :name wname))
+               (%result :classification
+                        :class "конструкция"
+                        :reason (format nil "мир зафиксирован как объект: ~A" wname)
+                        :voice (runtime-active-voice rt)
+                        :logic-mode (%atom-name (runtime-logic-mode rt))
+                        :ontology-mode (%atom-name (runtime-ontology-mode rt))
+                        :evaluation-mode (%atom-name (runtime-evaluation-mode rt))
+                        :report-lines (%world-summary-lines world)
+                        :world-name wname)))))
+
+      ((member head '("worlds" "миры") :test #'string=)
+       (%result :view :entry (%world-list-view rt)))
+
+      ((member head '("world-show" "мир-показать") :test #'string=)
+       (let* ((name (second form))
+              (world (%world-fetch rt name)))
+         (if world
+             (%result :view :entry (%world-show-view world))
+             (%result :error :message (format nil "мир не найден: ~A" (%atom-name name))))))
+
+      ((member head '("world-activate" "мир-активировать") :test #'string=)
+       (let* ((name (second form))
+              (world (%world-fetch rt name)))
+         (if (null world)
+             (%result :error :message (format nil "мир не найден: ~A" (%atom-name name)))
+             (progn
+               (%load-world-into-runtime rt world)
+               (%push-log rt (list :type :world-activate :name (%value->text (getf world :name))))
+               (%result :classification
+                        :class "конструкция"
+                        :reason (format nil "мир активирован: ~A" (%value->text (getf world :name)))
+                        :voice (runtime-active-voice rt)
+                        :logic-mode (%atom-name (runtime-logic-mode rt))
+                        :ontology-mode (%atom-name (runtime-ontology-mode rt))
+                        :evaluation-mode (%atom-name (runtime-evaluation-mode rt))
+                        :report-lines (%world-summary-lines world)
+                        :world-name (%value->text (getf world :name)))))))
+
+      ((member head '("compare-worlds" "сравнить-миры" "миры-сравнить") :test #'string=)
+       (let* ((a-name (second form))
+              (b-name (third form))
+              (world-a (%world-fetch rt a-name))
+              (world-b (%world-fetch rt b-name)))
+         (cond
+           ((null a-name)
+            (%result :error :message "сравнить-миры ожидает A и B: (сравнить-миры A B)"))
+           ((null b-name)
+            (%result :error :message "сравнить-миры ожидает A и B: (сравнить-миры A B)"))
+           ((null world-a)
+            (%result :error :message (format nil "мир A не найден: ~A" (%atom-name a-name))))
+           ((null world-b)
+            (%result :error :message (format nil "мир B не найден: ~A" (%atom-name b-name))))
+           (t
+            (let* ((report (%world-compare world-a world-b))
+                   (lines (%world-compare-report-lines world-a world-b report)))
+              (multiple-value-bind (class reason) (%classify-world-compare rt world-a world-b report)
+                (%push-log rt (list :type :world-compare
+                                    :a (%value->text (getf world-a :name))
+                                    :b (%value->text (getf world-b :name))
+                                    :class class))
+                (%result :classification
+                         :class class
+                         :reason reason
+                         :voice (runtime-active-voice rt)
+                         :logic-mode (%atom-name (runtime-logic-mode rt))
+                         :ontology-mode (%atom-name (runtime-ontology-mode rt))
+                         :evaluation-mode (%atom-name (runtime-evaluation-mode rt))
+                         :report-lines lines)))))))
+
+      ((member head '("merge-worlds" "объединить-миры" "миры-объединить") :test #'string=)
+       (let* ((a-name (second form))
+              (b-name (third form))
+              (args (cdddr form))
+              (result-name (or (%plist-value args :в)
+                               (%plist-value args :в-мир)
+                               (%plist-value args :into)
+                               (format nil "~A+~A" (%atom-name a-name) (%atom-name b-name))))
+              (world-a (%world-fetch rt a-name))
+              (world-b (%world-fetch rt b-name)))
+         (cond
+           ((or (null a-name) (null b-name))
+            (%result :error :message "объединить-миры ожидает A и B: (объединить-миры A B :в C)"))
+           ((null world-a)
+            (%result :error :message (format nil "мир A не найден: ~A" (%atom-name a-name))))
+           ((null world-b)
+            (%result :error :message (format nil "мир B не найден: ~A" (%atom-name b-name))))
+           (t
+            (let* ((merge-report (%world-merge rt world-a world-b result-name))
+                   (world (getf merge-report :world))
+                   (lines (%world-merge-report-lines world-a world-b merge-report)))
+              (multiple-value-bind (class reason) (%classify-world-merge rt world-a world-b merge-report)
+                (%push-log rt (list :type :world-merge
+                                    :a (%value->text (getf world-a :name))
+                                    :b (%value->text (getf world-b :name))
+                                    :out (%value->text (getf world :name))
+                                    :class class))
+                (%result :classification
+                         :class class
+                         :reason reason
+                         :voice (runtime-active-voice rt)
+                         :logic-mode (%atom-name (runtime-logic-mode rt))
+                         :ontology-mode (%atom-name (runtime-ontology-mode rt))
+                         :evaluation-mode (%atom-name (runtime-evaluation-mode rt))
+                         :report-lines lines
+                         :world-name (%value->text (getf world :name)))))))))
+
+      ((member head '("subtract-world" "вычесть-мир" "миры-вычесть") :test #'string=)
+       (let* ((a-name (second form))
+              (b-name (third form))
+              (args (cdddr form))
+              (result-name (or (%plist-value args :в)
+                               (%plist-value args :в-мир)
+                               (%plist-value args :into)
+                               (format nil "~A-~A" (%atom-name a-name) (%atom-name b-name))))
+              (world-a (%world-fetch rt a-name))
+              (world-b (%world-fetch rt b-name)))
+         (cond
+           ((or (null a-name) (null b-name))
+            (%result :error :message "вычесть-мир ожидает A и B: (вычесть-мир A B :в C)"))
+           ((null world-a)
+            (%result :error :message (format nil "мир A не найден: ~A" (%atom-name a-name))))
+           ((null world-b)
+            (%result :error :message (format nil "мир B не найден: ~A" (%atom-name b-name))))
+           (t
+            (let* ((subtract-report (%world-subtract rt world-a world-b result-name))
+                   (world (%store-world rt (getf subtract-report :world)))
+                   (lines (%world-subtract-report-lines world-a world-b
+                                                       (append subtract-report (list :world world)))))
+              (multiple-value-bind (class reason)
+                  (%classify-world-subtract rt (append subtract-report (list :world world)))
+                (%push-log rt (list :type :world-subtract
+                                    :a (%value->text (getf world-a :name))
+                                    :b (%value->text (getf world-b :name))
+                                    :out (%value->text (getf world :name))
+                                    :class class))
+                (%result :classification
+                         :class class
+                         :reason reason
+                         :voice (runtime-active-voice rt)
+                         :logic-mode (%atom-name (runtime-logic-mode rt))
+                         :ontology-mode (%atom-name (runtime-ontology-mode rt))
+                         :evaluation-mode (%atom-name (runtime-evaluation-mode rt))
+                         :report-lines lines
+                         :world-name (%value->text (getf world :name)))))))))
 
       ((member head '("query" "запрос") :test #'string=)
        (let ((pattern (second form)))
@@ -329,6 +486,9 @@
       ((member head '("canon" "канон" "чистка-языка") :test #'string=)
        (%result :view :entry (list :title "канонизация поверхности" :lines (%cleanup-lines))))
 
+      ((member head '("output-classes" "классы-вывода" "классификация") :test #'string=)
+       (%result :view :entry (%classified-output-catalog-view)))
+
       ((member head '("lib-reindex" "lib-переиндексировать" "lib-индекс") :test #'string=)
        (let ((libs (%lib-index-runtime rt :force t)))
          (%result :view
@@ -374,9 +534,14 @@
                   :reason (getf pipeline :reason)
                   :lib (and selected (getf selected :id))
                   :voice (runtime-active-voice rt)
+                  :logic-mode (%atom-name (runtime-logic-mode rt))
+                  :ontology-mode (%atom-name (runtime-ontology-mode rt))
+                  :evaluation-mode (%atom-name (runtime-evaluation-mode rt))
                   :normalized-forms (getf (getf pipeline :assist) :normalized-forms)
                   :filters (getf pipeline :filters)
-                  :route route-lines)))
+                  :route route-lines
+                  :report-lines (list (format nil "operator-input: ~A" (%value->text operator-input))
+                                      (format nil "selected-lib: ~A" (or (and selected (getf selected :id)) "-"))))))
 
       ((member head '("voices" "голоса") :test #'string=)
        (%result :view :entry (%voices-list-view rt)))
@@ -667,15 +832,30 @@
                           (%plist-value (cdr form) :вывод)))
               (voice (or (%plist-value (cdr form) :voice)
                          (%plist-value (cdr form) :голос)))
+              (logic (or (%plist-value (cdr form) :logic)
+                         (%plist-value (cdr form) :логика)))
+              (ontology (or (%plist-value (cdr form) :ontology)
+                            (%plist-value (cdr form) :онтология)))
+              (evaluation (or (%plist-value (cdr form) :evaluation)
+                              (%plist-value (cdr form) :оценка)))
               (has-lang (or (%plist-has-key (cdr form) :lang)
                             (%plist-has-key (cdr form) :язык)))
               (has-output (or (%plist-has-key (cdr form) :output)
                               (%plist-has-key (cdr form) :вывод)))
               (has-voice (or (%plist-has-key (cdr form) :voice)
                              (%plist-has-key (cdr form) :голос)))
+              (has-logic (or (%plist-has-key (cdr form) :logic)
+                             (%plist-has-key (cdr form) :логика)))
+              (has-ontology (or (%plist-has-key (cdr form) :ontology)
+                                (%plist-has-key (cdr form) :онтология)))
+              (has-evaluation (or (%plist-has-key (cdr form) :evaluation)
+                                  (%plist-has-key (cdr form) :оценка)))
               (lname (%atom-name lang))
               (oname (%atom-name output))
               (vname (%normalize-voice-name voice))
+              (logic-name (%atom-name logic))
+              (ontology-name (%atom-name ontology))
+              (evaluation-name (%atom-name evaluation))
               (normalized (cond
                             ((string= lname "ru") :ru)
                             ((string= lname "en") :en)
@@ -684,7 +864,26 @@
                                    ((member oname '("clean" "result" "чисто" "результат") :test #'string=) :clean)
                                    ((member oname '("verbose" "build" "подробно" "сборка") :test #'string=) :verbose)
                                    (t nil)))
-              (normalized-voice (and has-voice (gethash vname (runtime-voices rt)))))
+              (normalized-voice (and has-voice (gethash vname (runtime-voices rt))))
+              (normalized-logic (cond
+                                  ((member logic-name '("classical" "классическая") :test #'string=) :classical)
+                                  ((member logic-name '("many-valued" "многозначная") :test #'string=) :many-valued)
+                                  ((member logic-name '("fuzzy" "нечёткая" "нечеткая") :test #'string=) :fuzzy)
+                                  ((member logic-name '("paraconsistent" "параконсистентная") :test #'string=) :paraconsistent)
+                                  ((member logic-name '("dynamic-epistemic" "динамико-эпистемическая") :test #'string=) :dynamic-epistemic)
+                                  (t nil)))
+              (normalized-ontology (cond
+                                     ((member ontology-name '("set" "множества") :test #'string=) :set)
+                                     ((member ontology-name '("type" "типы") :test #'string=) :type)
+                                     ((member ontology-name '("category" "категория") :test #'string=) :category)
+                                     ((member ontology-name '("topos" "топос") :test #'string=) :topos)
+                                     ((member ontology-name '("mixed" "смешанная") :test #'string=) :mixed)
+                                     (t nil)))
+              (normalized-evaluation (cond
+                                       ((member evaluation-name '("strict" "строгий") :test #'string=) :strict)
+                                       ((member evaluation-name '("semi-strict" "полу-строгий" "semi") :test #'string=) :semi-strict)
+                                       ((member evaluation-name '("heuristic" "эвристический") :test #'string=) :heuristic)
+                                       (t nil))))
          (cond
            ((and has-lang (null normalized))
             (%result :error :message "режим ожидает :язык ru|en"))
@@ -692,20 +891,48 @@
             (%result :error :message "режим ожидает :вывод clean|verbose"))
            ((and has-voice (null normalized-voice))
             (%result :error :message "режим ожидает :голос сборка|предел|синтез"))
-           ((or normalized normalized-output has-voice)
+           ((and has-logic (null normalized-logic))
+            (%result :error :message "режим ожидает :логика classical|many-valued|fuzzy|paraconsistent|dynamic-epistemic"))
+           ((and has-ontology (null normalized-ontology))
+            (%result :error :message "режим ожидает :онтология set|type|category|topos|mixed"))
+           ((and has-evaluation (null normalized-evaluation))
+            (%result :error :message "режим ожидает :оценка strict|semi-strict|heuristic"))
+           ((or normalized normalized-output has-voice normalized-logic normalized-ontology normalized-evaluation)
             (when normalized
               (setf (runtime-lang rt) normalized))
             (when normalized-output
               (setf (runtime-output-mode rt) normalized-output))
             (when has-voice
               (setf (runtime-active-voice rt) vname))
+            (when normalized-logic
+              (setf (runtime-logic-mode rt) normalized-logic))
+            (when normalized-ontology
+              (setf (runtime-ontology-mode rt) normalized-ontology))
+            (when normalized-evaluation
+              (setf (runtime-evaluation-mode rt) normalized-evaluation))
+            (%sync-active-world-from-runtime rt :source "mode")
             (%result :ok
-                     :message (format nil "режим обновлён: язык=~A, вывод=~A, голос=~A"
+                     :message (format nil "режим обновлён: язык=~A, вывод=~A, голос=~A, логика=~A, онтология=~A, оценка=~A"
                                       (string-upcase (symbol-name (runtime-lang rt)))
                                       (string-upcase (symbol-name (runtime-output-mode rt)))
-                                      (runtime-active-voice rt))))
+                                      (runtime-active-voice rt)
+                                      (%atom-name (runtime-logic-mode rt))
+                                      (%atom-name (runtime-ontology-mode rt))
+                                      (%atom-name (runtime-evaluation-mode rt)))))
            (t
-            (%result :error :message "режим ожидает :язык, :вывод и/или :голос")))))
+            (%result :view
+                     :entry (list :title "режим"
+                                  :lines (list
+                                          (format nil "язык: ~A" (string-upcase (symbol-name (runtime-lang rt))))
+                                          (format nil "вывод: ~A" (string-upcase (symbol-name (runtime-output-mode rt))))
+                                          (format nil "голос: ~A" (runtime-active-voice rt))
+                                          (format nil "логика: ~A" (%atom-name (runtime-logic-mode rt)))
+                                          (format nil "онтология: ~A" (%atom-name (runtime-ontology-mode rt)))
+                                          (format nil "оценка: ~A" (%atom-name (runtime-evaluation-mode rt)))
+                                          (format nil "активный мир: ~A" (%active-world-name rt))
+                                          ""
+                                          "пример:"
+                                          "(режим :язык ru :голос предел :логика paraconsistent :онтология type :оценка heuristic)")))))))
 
       ((member head '("clear" "очистить") :test #'string=)
        (%result :clear))

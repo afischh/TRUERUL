@@ -4,9 +4,14 @@
   (cycle 0 :type integer)
   (lang :ru :type keyword)
   (output-mode :clean :type keyword)
+  (evaluation-mode :semi-strict :type keyword)
+  (logic-mode :classical :type keyword)
+  (ontology-mode :mixed :type keyword)
   (entities (make-hash-table :test 'equal))
   (relations nil)
   (states nil)
+  (worlds (make-hash-table :test 'equal))
+  (active-world "основной")
   (log nil)
   (form-log nil)
   (command-history nil)
@@ -47,9 +52,29 @@
       (setf (gethash name (truerul-runtime-state-voices rt))
             (append voice nil)))))
 
+(defun %runtime-now-string ()
+  (multiple-value-bind (sec min hour day mon year)
+      (decode-universal-time (get-universal-time))
+    (format nil "~4,'0D-~2,'0D-~2,'0D ~2,'0D:~2,'0D:~2,'0D"
+            year mon day hour min sec)))
+
+(defun %seed-default-world (rt)
+  (let ((world
+          (list :name "основной"
+                :entities nil
+                :relations nil
+                :states nil
+                :logic-mode "classical"
+                :ontology-mode "mixed"
+                :evaluation-mode "semi-strict"
+                :source "bootstrap"
+                :created-at (%runtime-now-string))))
+    (setf (gethash "основной" (truerul-runtime-state-worlds rt)) world)))
+
 (defun make-runtime ()
   (let ((rt (make-truerul-runtime-state)))
     (%seed-default-voices rt)
+    (%seed-default-world rt)
     rt))
 
 (defun runtime-cycle (rt)
@@ -70,6 +95,24 @@
 (defun (setf runtime-output-mode) (value rt)
   (setf (truerul-runtime-state-output-mode rt) value))
 
+(defun runtime-evaluation-mode (rt)
+  (truerul-runtime-state-evaluation-mode rt))
+
+(defun (setf runtime-evaluation-mode) (value rt)
+  (setf (truerul-runtime-state-evaluation-mode rt) value))
+
+(defun runtime-logic-mode (rt)
+  (truerul-runtime-state-logic-mode rt))
+
+(defun (setf runtime-logic-mode) (value rt)
+  (setf (truerul-runtime-state-logic-mode rt) value))
+
+(defun runtime-ontology-mode (rt)
+  (truerul-runtime-state-ontology-mode rt))
+
+(defun (setf runtime-ontology-mode) (value rt)
+  (setf (truerul-runtime-state-ontology-mode rt) value))
+
 (defun runtime-entities (rt)
   (truerul-runtime-state-entities rt))
 
@@ -84,6 +127,15 @@
 
 (defun (setf runtime-states) (value rt)
   (setf (truerul-runtime-state-states rt) value))
+
+(defun runtime-worlds (rt)
+  (truerul-runtime-state-worlds rt))
+
+(defun runtime-active-world (rt)
+  (truerul-runtime-state-active-world rt))
+
+(defun (setf runtime-active-world) (value rt)
+  (setf (truerul-runtime-state-active-world rt) value))
 
 (defun runtime-log (rt)
   (truerul-runtime-state-log rt))
